@@ -20,7 +20,7 @@ en el celular y en la compu.
 - `#/` → elegir trayecto
 - `#/seguridad` → prácticas de Seguridad Informática Básico
 - `#/seguridad/5` → práctica 5
-- `#/docente` → verificador de códigos (no aparece en ningún menú)
+- `#/docente` → panel docente: resultados de las prácticas (con usuario) y verificador de códigos. No aparece en ningún menú.
 
 ## Agregar un trayecto nuevo
 

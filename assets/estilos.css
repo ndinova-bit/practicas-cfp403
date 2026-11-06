@@ -96,3 +96,4 @@ textarea.sum{width:100%;min-height:190px;border-radius:12px;border:1px solid var
 .tcard{display:flex;gap:14px;align-items:center;background:#fff;border-radius:18px;padding:16px;margin:10px 0;box-shadow:0 4px 16px rgba(31,58,95,.07);border:0;width:100%;text-align:left;cursor:pointer;font-family:inherit;color:var(--ink)}
 .tcard svg{width:64px;height:64px;flex:none}.tcard b{font-size:18px;color:var(--navy)}.tcard .soon{font-size:12px;font-weight:700;color:var(--amber);background:var(--amber-l);border-radius:12px;padding:3px 9px;margin-left:auto}
 .tcard[disabled]{opacity:.6;cursor:default}
+select.in{width:100%;font-size:16px;padding:12px;border-radius:12px;border:2px solid var(--line);background:#fff;font-family:inherit}

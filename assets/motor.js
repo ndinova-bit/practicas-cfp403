@@ -203,7 +203,7 @@ TYPES.sqli=function(m,z){var cnt=0,doneT={};
 
 /* ---------------- FINAL ---------------- */
 function finish(){var p=S.p,tot=0,pts=0;S.max.forEach(function(x,i){tot+=x;pts+=S.pts[i]});var score=Math.round(pts/tot*100);var code=mkCode(S.t,S.id,S.per,score);
-  var dk='hechas-'+S.t.id,d=store(dk)||{};if(d[S.id]==null||score>d[S.id])d[S.id]=score;store(dk,d);guardarIntento({trayecto:S.t.id,practica:S.id,codigo_personal:S.per,puntaje:score,codigo:code,detalle:S.log});
+  var dk='hechas-'+S.t.id,d=store(dk)||{};if(d[S.id]==null||score>d[S.id])d[S.id]=score;store(dk,d);var gp=guardarIntento({trayecto:S.t.id,practica:S.id,codigo_personal:S.per,puntaje:score,codigo:code,detalle:S.log});
   $('#steps').innerHTML=p.missions.map(function(){return '<i class="done"></i>'}).join('');
   var t=S.t.nombre.toUpperCase()+'\nPRÁCTICA '+S.id+' · '+p.title.toUpperCase()+'\nCódigo personal: '+S.per+'\nCódigo de práctica: '+code+'\nPuntaje: '+score+'/100\n';
   p.missions.forEach(function(m,i){t+='Misión '+(i+1)+' ('+m.title+'): '+S.log[i]+'\n'});
@@ -211,18 +211,53 @@ function finish(){var p=S.p,tot=0,pts=0;S.max.forEach(function(x,i){tot+=x;pts+=
   '<p class="lead" style="text-align:center">'+(score>=70?'Muy bien. Ahora pasá a la Actividad '+S.id+'.':'Para la actividad necesitás 70 o más. Volvé a intentarlo: ya conocés las respuestas.')+'</p>'+
   '<div class="card"><b>Paso 1 · Copiá tu resumen</b><p class="hint">Incluye tu código de práctica. Tocá el botón y se copia solo.</p><textarea class="sum" id="sm" readonly></textarea><button class="btn" id="cp">Copiar resumen</button><div class="hint" id="cpm" style="text-align:center;margin-top:6px"></div></div>'+
   '<div class="card"><b>Paso 2 · Pegalo en la plataforma</b><p class="hint" style="margin-bottom:0">Entrá a la plataforma del CFP, abrí la <b>Actividad '+S.id+'</b> y pegalo en el cuadro de respuesta (mantené apretado y elegí <b>Pegar</b>, o Ctrl+V). Después respondé las preguntas de la actividad y entregá. <b>Si no lo pegás en la plataforma, el docente no lo recibe.</b></p></div>'+
-  '<div class="code">'+code+'</div><button class="btn alt" onclick="startPractice(\''+S.t.id+'\','+S.id+')">Volver a intentar</button><button class="btn alt" onclick="location.hash=\'#/'+S.t.id+'\'">Volver a las prácticas del trayecto</button></section>';
-  $('#sm').value=t;$('#cp').onclick=function(){var ta=$('#sm');ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+  '<div class="code">'+code+'</div><div class="hint" id="gs" style="text-align:center">Guardando tu intento…</div><button class="btn alt" onclick="startPractice(\''+S.t.id+'\','+S.id+')">Volver a intentar</button><button class="btn alt" onclick="location.hash=\'#/'+S.t.id+'\'">Volver a las prácticas del trayecto</button></section>';
+  $('#sm').value=t;gp.then(function(ok){var g=$('#gs');if(g)g.innerHTML=ok?'✓ Tu intento quedó registrado para el docente. Igual pegá el resumen en la actividad.':'No se pudo registrar el intento (¿sin internet?). No pasa nada: pegá el resumen en la actividad.'});$('#cp').onclick=function(){var ta=$('#sm');ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
     if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(function(){msg(true)},function(){msg(ok)});else msg(ok)};
   function msg(ok){$('#cpm').textContent=ok?'¡Copiado! Ahora andá a la plataforma y pegalo en la actividad.':'Seleccioná el texto y copialo a mano (mantené apretado en el celular).'}
   window.scrollTo(0,0);}
 
-/* ---------------- DOCENTE (oculto: #docente) ---------------- */
-function teacher(){$('#homeBtn').style.display='inline-block';$('#hT').textContent='Verificador docente';$('#hS').textContent='Plataforma de prácticas';$('#steps').innerHTML='';$('#homeBtn').onclick=goHome;
-  app.innerHTML='<section class="screen"><h1>Verificar un código de práctica</h1><p class="lead">Copiá del resumen que entregó el estudiante su <b>código personal</b> y su <b>código de práctica</b>.</p><div class="card">'+
-  '<input type="text" id="vp" placeholder="Código personal (APELLIDO1234)" style="text-transform:uppercase"><input type="text" id="vc" placeholder="Código de práctica (ej. P5-80-K3ZQ)" style="margin-top:8px;text-transform:uppercase"><button class="btn" id="vb">Verificar</button><div class="fb" id="vf"></div></div>'+
-  '<p class="hint">El código se calcula a partir del código personal, el número de práctica y el puntaje. Si alguien copia el código de otro o cambia el puntaje a mano, no coincide.</p></section>';
-  $('#vb').onclick=function(){var p=$('#vp').value.trim().toUpperCase().replace(/\s+/g,''),c=$('#vc').value.trim().toUpperCase().replace(/\s+/g,''),f=$('#vf');var m=c.match(/^([A-Z]+)(\d+)-(\d{1,3})-([0-9A-Z]{4})$/);var tt=null;for(var k in TRAYECTOS)if(TRAYECTOS[k].prefijo===(m&&m[1]))tt=TRAYECTOS[k];
-    if(!m||!tt){f.className='fb no';f.textContent='El código no tiene el formato correcto (por ejemplo P5-80-K3ZQ).';return}
-    if(mkCode(tt,+m[2],p,+m[3])===c){f.className='fb ok';f.innerHTML='<b>Código válido.</b> '+esc(tt.nombre)+' · Práctica '+m[2]+' ('+esc(tt.practicas[+m[2]]?tt.practicas[+m[2]].title:'')+') · puntaje '+m[3]+'/100.'}
-    else{f.className='fb no';f.innerHTML='<b>No coincide.</b> Ese código no corresponde a ese estudiante, o el puntaje fue modificado.'}};}
+/* ---------------- DOCENTE (oculto: #/docente) ---------------- */
+var DOC={token:null,correo:'',datos:[],f:{t:'',p:'',q:''}};
+try{var _s=JSON.parse(sessionStorage.getItem('doc')||'null');if(_s&&_s.exp>Date.now()){DOC.token=_s.token;DOC.correo=_s.correo}}catch(e){}
+function teacher(){header('Panel docente','Plataforma de prácticas');
+  if(!DOC.token)return docLogin();
+  app.innerHTML='<section class="screen"><h1>Resultados de las prácticas</h1><p class="hint">Ingresaste como <b>'+esc(DOC.correo)+'</b> · <a href="#" id="dsal">salir</a></p><div id="dz" class="card">Cargando intentos…</div>'+docVerif()+'</section>';
+  $('#dsal').onclick=function(e){e.preventDefault();DOC.token=null;try{sessionStorage.removeItem('doc')}catch(x){}teacher()};
+  bindVerif();
+  leerIntentos(DOC.token).then(function(d){DOC.datos=d;docTabla()},function(e){$('#dz').innerHTML='<div class="fb no" style="display:block">'+esc(e.message)+'</div>';if(/venció/.test(e.message)){DOC.token=null;try{sessionStorage.removeItem('doc')}catch(x){}}})}
+function docLogin(){
+  app.innerHTML='<section class="screen"><h1>Panel docente</h1><p class="lead">Ingresá con el correo y la contraseña que te dio la dirección del CFP.</p><div class="card"><input type="text" id="dc" placeholder="Correo" autocomplete="username"><input type="password" id="dp" placeholder="Contraseña" style="margin-top:8px" autocomplete="current-password"><button class="btn" id="db">Ingresar</button><div class="fb" id="df"></div></div>'+docVerif()+'</section>';
+  bindVerif();
+  function go(){var c=$('#dc').value.trim().toLowerCase(),p=$('#dp').value;if(!c||!p)return;$('#db').disabled=true;
+    ingresarDocente(c,p).then(function(j){DOC.token=j.access_token;DOC.correo=c;try{sessionStorage.setItem('doc',JSON.stringify({token:j.access_token,correo:c,exp:Date.now()+(j.expires_in||3600)*1000-60000}))}catch(e){}teacher()},
+      function(e){$('#db').disabled=false;$('#df').className='fb no';$('#df').textContent=/invalid/i.test(e.message)?'Correo o contraseña incorrectos.':e.message})}
+  $('#db').onclick=go;$('#dp').onkeydown=function(e){if(e.key==='Enter')go()}}
+function docTabla(){var f=DOC.f,d=DOC.datos;
+  var tOpts='<option value="">Todos los trayectos</option>'+ORDEN.map(function(id){return '<option value="'+id+'"'+(f.t===id?' selected':'')+'>'+esc(TRAYECTOS[id].nombre)+'</option>'}).join('');
+  var ps={};d.forEach(function(r){if(!f.t||r.trayecto===f.t)ps[r.practica]=1});
+  var pOpts='<option value="">Todas las prácticas</option>'+Object.keys(ps).map(Number).sort(function(a,b){return a-b}).map(function(n){return '<option value="'+n+'"'+(String(f.p)===String(n)?' selected':'')+'>Práctica '+n+'</option>'}).join('');
+  var rows=d.filter(function(r){return (!f.t||r.trayecto===f.t)&&(!f.p||String(r.practica)===String(f.p))&&(!f.q||r.codigo_personal.indexOf(f.q.toUpperCase())>=0)});
+  var g={};rows.forEach(function(r){var k=r.trayecto+'|'+r.practica+'|'+r.codigo_personal;var x=g[k]||(g[k]={t:r.trayecto,p:r.practica,c:r.codigo_personal,best:-1,n:0,last:r.creado,list:[]});
+    x.n++;x.list.push(r);if(r.puntaje>x.best)x.best=r.puntaje;if(r.creado>x.last)x.last=r.creado});
+  var arr=Object.keys(g).map(function(k){return g[k]}).sort(function(a,b){return a.c<b.c?-1:a.c>b.c?1:(a.t<b.t?-1:a.t>b.t?1:a.p-b.p)});
+  var est={};arr.forEach(function(x){est[x.c]=1});var apr=arr.filter(function(x){return x.best>=70}).length;
+  var h='<div style="display:grid;gap:8px"><select id="ft" class="in">'+tOpts+'</select><select id="fp" class="in">'+pOpts+'</select><input type="text" id="fq" placeholder="Buscar estudiante (apellido)" value="'+esc(f.q)+'" style="text-transform:uppercase"></div>'+
+   '<div class="badges" style="margin:12px 0"><div class="badge on"><span class="big" style="font-size:26px;display:block;margin:0">'+Object.keys(est).length+'</span>estudiantes</div><div class="badge on"><span class="big" style="font-size:26px;display:block;margin:0">'+rows.length+'</span>intentos</div><div class="badge on"><span class="big" style="font-size:26px;display:block;margin:0">'+apr+'/'+arr.length+'</span>prácticas con 70+</div></div>';
+  if(!arr.length)h+='<p class="hint">Todavía no hay intentos con estos filtros.</p>';
+  else{h+='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14px"><tr style="text-align:left;color:#6B7A8C"><th style="padding:6px">Estudiante</th>'+(f.t?'':'<th>Trayecto</th>')+'<th>Práct.</th><th>Mejor</th><th>Intentos</th><th>Último</th></tr>';
+    arr.forEach(function(x,i){var t=TRAYECTOS[x.t];h+='<tr class="drow" data-i="'+i+'" style="border-top:1px solid #E3E8EF;cursor:pointer"><td style="padding:8px 6px"><b>'+esc(x.c)+'</b></td>'+(f.t?'':'<td>'+esc(t?t.nombre.split(' ')[0]:x.t)+'</td>')+'<td>'+x.p+'</td><td style="font-weight:800;color:'+(x.best>=70?'#277A52':'#B9483B')+'">'+x.best+'</td><td>'+x.n+'</td><td>'+new Date(x.last).toLocaleDateString('es-AR')+'</td></tr><tr id="dd'+i+'" style="display:none"><td colspan="6" style="padding:6px 6px 12px"></td></tr>'});
+    h+='</table></div><button class="btn alt" id="csv">Descargar planilla (CSV)</button>'}
+  $('#dz').innerHTML=h;
+  $('#ft').onchange=function(){f.t=this.value;f.p='';docTabla()};$('#fp').onchange=function(){f.p=this.value;docTabla()};
+  $('#fq').oninput=function(){f.q=this.value.trim();clearTimeout(DOC.tm);DOC.tm=setTimeout(function(){docTabla();var q=$('#fq');q.focus();q.setSelectionRange(q.value.length,q.value.length)},400)};
+  app.querySelectorAll('.drow').forEach(function(tr){tr.onclick=function(){var x=arr[+tr.dataset.i],dd=$('#dd'+tr.dataset.i),td=dd.firstChild;
+    if(dd.style.display==='none'){var p=TRAYECTOS[x.t]&&TRAYECTOS[x.t].practicas[x.p];
+      td.innerHTML='<div class="hint"><b>'+esc(p?p.title:'Práctica '+x.p)+'</b></div>'+x.list.map(function(r){return '<div class="mono" style="font-size:12.5px">'+new Date(r.creado).toLocaleString('es-AR')+' · <b>'+r.puntaje+'/100</b> · '+esc(r.codigo)+'<br>'+(Array.isArray(r.detalle)?r.detalle.map(function(l,j){return 'Misión '+(j+1)+': '+esc(String(l))}).join('<br>').replace(/\n/g,'<br>&nbsp;&nbsp;'):'')+'</div>'}).join('');dd.style.display=''}else dd.style.display='none'}});
+  var c=$('#csv');if(c)c.onclick=function(){var L=[['estudiante','trayecto','practica','mejor_puntaje','intentos','ultimo_intento']].concat(arr.map(function(x){return [x.c,x.t,x.p,x.best,x.n,new Date(x.last).toLocaleString('es-AR')]}));
+    var b=new Blob(['﻿'+L.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"'}).join(';')}).join('\n')],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='practicas-'+(f.t||'todas')+'.csv';a.click()}}
+function docVerif(){return '<h3>Verificar un código a mano</h3><div class="card"><p class="hint" style="margin-top:0">Para un resumen pegado en una actividad. Copiá el código personal y el código de práctica.</p><input type="text" id="vp" placeholder="Código personal (APELLIDO1234)" style="text-transform:uppercase"><input type="text" id="vc" placeholder="Código de práctica (ej. P5-80-K3ZQ)" style="margin-top:8px;text-transform:uppercase"><button class="btn alt" id="vb">Verificar</button><div class="fb" id="vf"></div></div>'}
+function bindVerif(){$('#vb').onclick=function(){var p=$('#vp').value.trim().toUpperCase().replace(/\s+/g,''),c=$('#vc').value.trim().toUpperCase().replace(/\s+/g,''),f=$('#vf');var m=c.match(/^([A-Z]+)(\d+)-(\d{1,3})-([0-9A-Z]{4})$/);var tt=null;for(var k in TRAYECTOS)if(TRAYECTOS[k].prefijo===(m&&m[1]))tt=TRAYECTOS[k];
+  if(!m||!tt){f.className='fb no';f.textContent='El código no tiene el formato correcto (por ejemplo P5-80-K3ZQ).';return}
+  if(mkCode(tt,+m[2],p,+m[3])===c){f.className='fb ok';f.innerHTML='<b>Código válido.</b> '+esc(tt.nombre)+' · Práctica '+m[2]+' · puntaje '+m[3]+'/100.'}
+  else{f.className='fb no';f.innerHTML='<b>No coincide.</b> Ese código no corresponde a ese estudiante, o el puntaje fue modificado.'}}}
