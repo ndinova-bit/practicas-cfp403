@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prácticas · CFP N.º 403</title>
+<link rel="stylesheet" href="assets/estilos.css">
+</head>
+
+<body>
+<header>
+  <button class="home" onclick="goHome()" id="homeBtn" style="display:none">◂ Inicio</button>
+  <div><div class="t" id="hT">Laboratorio de Seguridad</div><div class="s" id="hS">Seguridad Informática Básico · CFP N.º 403</div></div>
+  <div class="steps" id="steps"></div>
+</header>
+<main id="app"></main>
+<script src="assets/iconos.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/motor.js"></script>
+<!-- Trayectos: un archivo por trayecto -->
+<script src="trayectos/seguridad.js"></script>
+<script src="trayectos/pensamiento-computacional.js"></script>
+<script src="trayectos/planillas.js"></script>
+<script>render();</script>
+</body>
+</html>
