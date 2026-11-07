@@ -1,0 +1,22 @@
+# Evita que Supabase (plan gratuito) pause el proyecto de prácticas por inactividad:
+# hace una consulta mínima cada 3 días (función ping, no lee ni escribe datos).
+# Mismo mecanismo que usa la plataforma del CFP 403.
+name: Mantener activo Supabase de prácticas
+
+on:
+  schedule:
+    - cron: '0 12 */3 * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta mínima a la base
+        run: |
+          CODIGO=$(curl -s -o respuesta.txt -w "%{http_code}" -X POST \
+            "https://kejiwtpjixczomylnkzj.supabase.co/rest/v1/rpc/ping" \
+            -H "apikey: sb_publishable_UHMTlgI0BP9vVDYBDm6AcA_x9K2ROZR" \
+            -H "Content-Type: application/json" -d '{}')
+          echo "Respuesta: $CODIGO $(cat respuesta.txt)"
+          test "$CODIGO" = "200"
