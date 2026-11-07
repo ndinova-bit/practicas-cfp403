@@ -41,6 +41,13 @@ function actualizarPerfil() { return funcion('perfil').then(function (p) { SES.p
 function salir() { SES = null; sesGuardar(); }
 // Guarda un intento al terminar una práctica
 function guardarIntento(datos) { return funcion('registrar', datos).then(function () { return true; }, function () { return false; }); }
+// Consulta el estado del intento con nota en la plataforma del CFP (primer intento, reintento, aprobada, etc.)
+function estadoEnCFP(trayecto, practica) {
+  return tokenVigente().then(function (t) {
+    return fetch(CFP_URL + '/rest/v1/rpc/estado_practica', { method: 'POST', headers: { apikey: CFP_CLAVE, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_trayecto: trayecto, p_practica: practica }) }).then(function (r) { return r.ok ? r.json() : { estado: 'error' }; });
+  }).catch(function () { return { estado: 'error' }; });
+}
 // Carga la nota en la sábana de la plataforma del CFP (clase titulada «Práctica N»). Devuelve un estado.
 function notaEnCFP(trayecto, practica, puntaje, detalle) {
   return tokenVigente().then(function (t) {

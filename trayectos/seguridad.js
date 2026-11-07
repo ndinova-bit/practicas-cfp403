@@ -49,7 +49,7 @@ var PR_SEG={
   {q:'Una app de linterna no necesita permiso para ver mis contactos.',opts:['Verdadero','Falso'],a:0,why:'Cada app debería tener solo los permisos que necesita. Una linterna no necesita tus contactos.'},
   {q:'Prestarle la contraseña a un amigo de confianza no tiene riesgo.',opts:['Verdadero','Falso'],a:1,why:'Una contraseña compartida deja de ser tuya: no sabés dónde la anota ni a quién se la pasa.'}]}]},
 
-3:{mod:1,title:'Copias que salvan',icon:'cloud',tone:'teal',mins:30,
+3:{mod:1,title:'Copias que salvan',icon:'cloud',tone:'teal',mins:30,cfp:'Actividad 3 · Mi copia, comprobada',
  intro:'Marta perdió tres años de trabajo por no tener copias. Vamos a aprender a hacerlas bien, y sobre todo a comprobar que sirven.',
  missions:[
  {type:'quiz',row:true,title:'¿Es una copia de seguridad?',lead:'Una copia de seguridad es una copia guardada <b>en otro lugar</b>. ¿Estos casos cuentan?',items:[
@@ -66,7 +66,7 @@ var PR_SEG={
   sug:['Fotos del celular','Documentos de trabajo','Trabajos del curso','Contactos','Conversaciones de WhatsApp'],
   qs:[['¿Dónde vas a guardar la copia?',['Pendrive o disco','Nube','Otra compu'],'dónde:'],['¿Cada cuánto?',['Cada semana','Cada mes','Cada vez que cambia'],'frecuencia:']]}]},
 
-4:{mod:1,title:'Malware al acecho',icon:'bug',tone:'coral',mins:40,
+4:{mod:1,title:'Malware al acecho',icon:'bug',tone:'coral',mins:40,cfp:'Actividad 4 · Diagnóstico de la compu de Marta',
  intro:'A la panadería llegó un correo con una «factura». Rosa lo abrió y apareció un cartel: «Tus archivos fueron bloqueados». Por suerte, Marta ya tenía copias. Vamos a entender qué pasó.',
  missions:[
  {type:'sort',title:'Conocé a la banda',lead:'Cada tipo de malware hace algo distinto. Ubicá cada descripción.',bins:['Troyano','Ransomware','Spyware','Adware'],
@@ -102,7 +102,7 @@ var PR_SEG={
   {q:'Te deja moverte por la casa con el celular.',opts:['Con cable','Wifi'],a:1,why:'La comodidad del wifi: sin cables.'},
   {q:'Para que alguien se meta, tiene que enchufarse físicamente.',opts:['Con cable','Wifi'],a:0,why:'Por eso el wifi necesita una buena clave: la señal sale de tu casa.'}]}]},
 
-6:{mod:2,title:'Tu red de casa',icon:'router',tone:'teal',mins:35,
+6:{mod:2,title:'Tu red de casa',icon:'router',tone:'teal',mins:35,cfp:'Actividad 6 · El relevamiento de mi wifi',
  intro:'El router es la puerta de entrada de tu casa a internet. Hoy vamos a ver cómo está configurado el de Marta… y a revisar el tuyo.',
  missions:[
  {type:'sort',title:'Cada aparato, su función',lead:'Ubicá cada descripción en el aparato que corresponde.',bins:['Módem','Router','Switch','Dispositivo final'],
@@ -112,10 +112,7 @@ var PR_SEG={
  {type:'quiz',title:'WPA2, WPA3, ¿qué?',lead:'Leé estas situaciones sobre la seguridad del wifi.',items:[
   {q:'¿Qué tipo de seguridad conviene elegir en el router?',opts:['Abierta (sin clave)','WEP','WPA2 o WPA3'],a:2,why:'WPA2 y WPA3 son los actuales. WPA3 es el más nuevo; si tu router no lo tiene, WPA2 está bien.'},
   {q:'Un vecino te pide la clave del wifi «para una urgencia». ¿Qué conviene?',opts:['Dársela y cambiarla después','Dársela para siempre','Ofrecerle la red de invitados si el router la tiene'],a:2,why:'La red de invitados le da internet sin dejarlo ver tus equipos. Si no tenés, cambiá la clave después.'},
-  {q:'En la lista del router aparece un equipo que no reconocés. ¿Qué hacés?',opts:['Nada','Cambio la clave del wifi','Apago el router para siempre'],a:1,why:'Al cambiar la clave, se desconectan todos y solo vuelven los que la saben.'}]},
- {type:'list',title:'Relevá tu wifi',lead:'Ahora en tu casa. En el celular, entrá a <b>Ajustes › Wi-Fi</b> y tocá tu red. Agregá los equipos que se conectan a tu wifi.',
-  sug:['Mi celular','El celular de otra persona de la casa','Una compu','Un televisor','Una consola de juegos'],ph:'Otro equipo',
-  qs:[['¿Lo reconocés?',['Sí','No estoy seguro'],'lo reconozco:'],['¿Quién lo usa?',['Yo','Otra persona de la casa','No sé'],'lo usa:']]}]},
+  {q:'En la lista del router aparece un equipo que no reconocés. ¿Qué hacés?',opts:['Nada','Cambio la clave del wifi','Apago el router para siempre'],a:1,why:'Al cambiar la clave, se desconectan todos y solo vuelven los que la saben.'}]}]},
 
 7:{mod:2,title:'Direcciones IP',icon:'globe',tone:'teal',mins:35,
  intro:'Cada equipo en una red tiene una dirección, como cada casa tiene su calle y su número. Hoy aprendemos a leerlas.',
@@ -135,7 +132,7 @@ var PR_SEG={
   {q:'La compu tiene 192.168.1.50. ¿Cuál puede ser la impresora para que se vean?',opts:['192.168.1.60','192.168.5.60','10.0.0.60'],a:0,why:'Tiene que estar en la misma calle: 192.168.1.'}]},
  {type:'order',title:'De más grande a más chico',lead:'Ordená desde lo más grande hasta lo más específico, como una dirección postal.',steps:['Internet','La red de tu proveedor','Tu IP pública (la de tu casa)','La red de tu casa (192.168.1.x)','La IP de tu celular (192.168.1.34)'],why:'Igual que país, ciudad, calle y número.'}]},
 
-8:{mod:2,title:'Diagnóstico de red',icon:'terminal',tone:'navy',mins:40,
+8:{mod:2,title:'Diagnóstico de red',icon:'terminal',tone:'navy',mins:40,cfp:'Actividad 8 · Informe técnico de la red',
  intro:'«No anda internet». ¿Es el celular, el wifi, el router o la empresa? Con tres comandos lo podés averiguar. Vamos a practicar en una terminal simulada.',
  missions:[
  {type:'term',title:'Tu primera terminal',lead:'Escribí los comandos que pide cada tarea y apretá Enter.',banner:'Terminal de práctica del CFP. Nada de lo que escribas toca tu equipo.',
@@ -156,7 +153,7 @@ var PR_SEG={
  {type:'check',title:'Ahora en tu compu (opcional)',lead:'Si tenés una compu con Windows, abrí <b>Símbolo del sistema</b> (buscalo con la lupa) y probá de verdad. Si no tenés compu, marcá solo la última.',min:1,items:['Ejecuté <b>ipconfig</b> y anoté mi dirección IPv4','Ejecuté <b>ping 8.8.8.8</b> y anoté cuántos paquetes llegaron','Ejecuté <b>tracert google.com</b> y conté los saltos','No tengo compu: hice todas las tareas en la terminal simulada']}]},
 
 /* ================= MÓDULO III ================= */
-9:{mod:3,title:'Cifrar es guardar bajo llave',icon:'lock',tone:'violet',mins:35,
+9:{mod:3,title:'Cifrar es guardar bajo llave',icon:'lock',tone:'violet',mins:35,cfp:'Actividad 9 · Mi archivo bajo llave',
  intro:'Cifrar es transformar un mensaje para que solo pueda leerlo quien tenga la clave. Hoy vas a cifrar y descifrar de verdad.',
  missions:[
  {type:'cipher',title:'Cifrá y descifrá',lead:'Probá primero cifrar un mensaje tuyo. Después abrí el mensaje que te dejó Marta.',secret:'IlSS0kQwI15KsixkDaIMJ7PhPiAnR36OdJTbecjAsxC3L2lu0FP6sV1ki7vZH1Db2xp7/nadebFI9S+nYC809EVnfOZvhXtWfRyaHFOubbHFpUfhKEcZF2YfNMMTNATUuKBw+225e9ME57tu',clue:'es lo que más se vende en la panadería, en singular y en minúscula (una palabra, sin espacios).',after:'Esto mismo hace 7-Zip con tus archivos.'},
@@ -164,8 +161,7 @@ var PR_SEG={
   {q:'Cifrás un archivo con 7-Zip y la contraseña «mate-con-tortas». Para abrirlo usás la misma contraseña. ¿Qué tipo es?',opts:['Simétrico','Asimétrico'],a:0,why:'Una sola clave para cerrar y abrir: simétrico.'},
   {q:'WhatsApp cifra tus mensajes para que solo el destinatario los lea, sin que ustedes hayan acordado una clave. ¿Qué tipo usa para empezar?',opts:['Simétrico','Asimétrico'],a:1,why:'Cada celular tiene su par de llaves: pública y privada. Por eso no tienen que pasarse una clave.'},
   {q:'Si perdés la contraseña de un archivo cifrado con 7-Zip…',opts:['Lo recupero con el antivirus','Lo abro con otro programa','No hay forma de abrirlo'],a:2,why:'Esa es la fuerza del cifrado y también su riesgo: guardá bien la contraseña.'}]},
- {type:'order',title:'Cifrar con 7-Zip',lead:'Ordená los pasos para proteger un archivo con 7-Zip (es gratis).',steps:['Clic derecho sobre el archivo','Elegir 7-Zip › Añadir al archivo…','Escribir una contraseña larga (dos veces)','Elegir cifrado AES-256','Tocar Aceptar','Comprobar que pide contraseña al abrirlo'],why:'El último paso, otra vez, es comprobar que funciona.'},
- {type:'check',title:'Tu archivo protegido',lead:'Hacelo con un archivo tuyo de prueba (no el original importante). Marcá lo que hiciste.',min:1,items:['Instalé <b>7-Zip</b> desde su sitio oficial (7-zip.org)','Cifré un archivo de prueba con contraseña y AES-256','Comprobé que me pide la contraseña para abrirlo','No tengo compu: hice el cifrado en el Laboratorio y lo cuento en la actividad']}]},
+ {type:'order',title:'Cifrar con 7-Zip',lead:'Ordená los pasos para proteger un archivo con 7-Zip (es gratis).',steps:['Clic derecho sobre el archivo','Elegir 7-Zip › Añadir al archivo…','Escribir una contraseña larga (dos veces)','Elegir cifrado AES-256','Tocar Aceptar','Comprobar que pide contraseña al abrirlo'],why:'El último paso, otra vez, es comprobar que funciona.'}]},
 
 10:{mod:3,title:'La huella de los archivos',icon:'fingerprint',tone:'violet',mins:30,
  intro:'Cada archivo tiene una huella única llamada hash. Si cambia una sola letra, cambia la huella entera. Vamos a comprobarlo con una huella real.',
@@ -181,9 +177,9 @@ var PR_SEG={
   {q:'¿Se puede reconstruir el texto original a partir de su huella?',opts:['Sí, con un programa especial','No, es de un solo sentido'],a:1,why:'El hash es como una huella digital: identifica, pero no permite reconstruir a la persona.'}]},
  {type:'sort',title:'¿Hash o cifrado?',lead:'Se parecen, pero sirven para cosas distintas.',bins:['Hash (huella)','Cifrado (bajo llave)'],
   items:[['Comprobar que un archivo descargado no fue modificado',0],['No se puede volver atrás',0],['Siempre da el mismo largo',0],['Proteger un archivo para que solo lo abra quien tiene la clave',1],['Con la clave correcta se recupera el original',1],['Lo que hace 7-Zip con contraseña',1]],end:'El hash comprueba. El cifrado esconde.'},
- {type:'check',title:'Huella en tu compu (opcional)',lead:'Si tenés compu, probalo de verdad. Si no, marcá la última.',min:1,items:['Creé un archivo <b>huella.txt</b> con la palabra hola','En Windows ejecuté <b>certutil -hashfile huella.txt SHA256</b> (en Mac: <b>shasum -a 256 huella.txt</b>)','Cambié una letra, repetí el comando y vi que la huella cambió','No tengo compu: hice todo en el Laboratorio']}]},
+ {type:'check',title:'Huella en tu compu (opcional)',lead:'Si tenés compu, probalo de verdad. Si no, marcá la última.',min:1,items:['Creé un archivo <b>huella.txt</b> con la palabra hola','En Windows ejecuté <b>certutil -hashfile huella.txt SHA256</b> (en Mac: <b>shasum -a 256 huella.txt</b>)','Cambié una letra, repetí el comando y vi que la huella cambió','No tengo compu: hice todo en esta práctica']}]},
 
-11:{mod:3,title:'Un llavero para tus claves',icon:'key',tone:'violet',mins:35,
+11:{mod:3,title:'Un llavero para tus claves',icon:'key',tone:'violet',mins:35,cfp:'Actividad 11 · Mi llavero digital',
  intro:'¿Una contraseña distinta y larga para cada cuenta? Imposible de recordar… salvo que uses un gestor de contraseñas: un llavero cifrado que las guarda por vos.',
  missions:[
  {type:'quiz',title:'¿Para qué sirve un gestor?',lead:'Un gestor de contraseñas guarda todas tus claves cifradas. Vos recordás una sola: la contraseña maestra.',items:[
@@ -193,18 +189,16 @@ var PR_SEG={
  {type:'pwd',title:'Tu contraseña maestra de práctica',lead:'La maestra es la llave del llavero. Practicá cómo debería ser (no uses una real).',
   rules:[['Tiene 20 caracteres o más','return p.length>=20'],['Tiene 5 palabras o más','return p.trim().split(/\\s+/).length>=5'],['Incluye al menos un número','return /\\d/.test(p)'],['No contiene «123», «contraseña» ni «password»','return !/123|contrase|password/i.test(p)']],
   end:'Una maestra así es muy difícil de adivinar y se puede recordar. Hacé la tuya con la misma idea.'},
- {type:'order',title:'Empezar con Bitwarden',lead:'Ordená los pasos para empezar a usar Bitwarden, un gestor gratuito.',steps:['Bajar la app oficial de Bitwarden (tienda del celular o bitwarden.com)','Crear la cuenta con tu correo','Elegir una contraseña maestra larga y anotarla en papel','Agregar tu primera contraseña (por ejemplo, la del correo)','Agregar dos contraseñas más','Probar entrar a un sitio usando el gestor'],why:'Con 3 contraseñas guardadas ya tenés el hábito armado.'},
- {type:'check',title:'Tu llavero',lead:'Marcá lo que hiciste de verdad. Si no pudiste instalarlo, contalo en la actividad.',min:1,items:['Instalé Bitwarden (o KeePass) desde un sitio o tienda oficial','Creé mi contraseña maestra y la anoté en papel en un lugar seguro','Guardé al menos 3 contraseñas en el gestor','Usé el generador para crear una contraseña nueva']}]},
+ {type:'order',title:'Empezar con Bitwarden',lead:'Ordená los pasos para empezar a usar Bitwarden, un gestor gratuito.',steps:['Bajar la app oficial de Bitwarden (tienda del celular o bitwarden.com)','Crear la cuenta con tu correo','Elegir una contraseña maestra larga y anotarla en papel','Agregar tu primera contraseña (por ejemplo, la del correo)','Agregar dos contraseñas más','Probar entrar a un sitio usando el gestor'],why:'Con 3 contraseñas guardadas ya tenés el hábito armado.'}]},
 
-12:{mod:3,title:'Doble llave: la verificación en dos pasos',icon:'otp',tone:'violet',mins:40,
+12:{mod:3,title:'Doble llave: la verificación en dos pasos',icon:'otp',tone:'violet',mins:40,cfp:'Actividad 12 · Mi cuenta con doble llave',
  intro:'Aunque alguien sepa tu contraseña, con la verificación en dos pasos no puede entrar sin tu celular. Es la mejor defensa contra el robo de cuentas.',
  missions:[
  {type:'otp',title:'Probalo en una simulación',lead:'Entrá a un correo de práctica. Primero con contraseña, después con el código del celular.',end:'Así funciona en tu correo, en WhatsApp o en el banco. Aunque te roben la contraseña, falta tu celular.'},
  {type:'sort',title:'Algo que sabés, tenés o sos',lead:'Los «factores» son formas de demostrar que sos vos. Lo más seguro es combinar dos distintos.',bins:['Algo que sabés','Algo que tenés','Algo que sos'],
   items:[['Una contraseña',0],['Un PIN',0],['Un código que llega al celular',1],['Una app autenticadora',1],['Tu huella dactilar',2],['Tu cara',2]],end:'Contraseña (sabés) + código del celular (tenés) = dos pasos.'},
  {type:'spot',title:'¡Cuidado con el código!',lead:'El truco más común para robar cuentas de WhatsApp en Argentina es pedirte el código. Encontrá las <b>3 señales</b> en este chat.',need:3,win:'WhatsApp',
-  html:'<b>+54 9 11 5xxx-xxxx</b> '+SP('No está en tus contactos: dice ser alguien conocido desde un número nuevo.','(número desconocido)')+'<br><br>«Hola! '+SN('Un saludo amistoso no es señal por sí solo.','¿Cómo andás?')+' Soy Caro del grupo del colegio, '+SP('Excusa típica para justificar el número nuevo.','cambié de número.')+' Te llegó un código de 6 números por error, '+SP('¡Nunca! Ese código es tu llave. Quien lo tenga se queda con tu WhatsApp.','¿me lo pasás?')+' Es urgente 🙏»'},
- {type:'check',title:'Activá tu doble llave',lead:'Elegí al menos una cuenta tuya y activá la verificación en dos pasos. Marcá lo que hiciste.',min:1,items:['<b>WhatsApp:</b> Ajustes › Cuenta › <b>Verificación en dos pasos</b> › Activar (elegí un PIN de 6 números)','<b>Gmail:</b> en myaccount.google.com › Seguridad › <b>Verificación en 2 pasos</b>','<b>Instagram o Facebook:</b> Configuración › Seguridad › <b>Autenticación en dos pasos</b>','Saqué una captura de la pantalla de confirmación, sin datos personales a la vista']}]},
+  html:'<b>+54 9 11 5xxx-xxxx</b> '+SP('No está en tus contactos: dice ser alguien conocido desde un número nuevo.','(número desconocido)')+'<br><br>«Hola! '+SN('Un saludo amistoso no es señal por sí solo.','¿Cómo andás?')+' Soy Caro del grupo del colegio, '+SP('Excusa típica para justificar el número nuevo.','cambié de número.')+' Te llegó un código de 6 números por error, '+SP('¡Nunca! Ese código es tu llave. Quien lo tenga se queda con tu WhatsApp.','¿me lo pasás?')+' Es urgente 🙏»'}]},
 
 /* ================= MÓDULO IV ================= */
 13:{mod:4,title:'Detective de phishing',icon:'mail',tone:'coral',mins:40,
@@ -221,7 +215,7 @@ var PR_SEG={
   items:[['«Tenés 2 horas para responder»',0],['«Último aviso»',0],['«Tu cuenta será bloqueada»',1],['«Detectamos una compra sospechosa»',1],['«Ganaste un celular»',2],['«Reintegro de $50.000 a tu favor»',2],['«Le escribe el área de seguridad del banco»',3],['«Soy tu jefe, necesito que transfieras ya»',3]],end:'Si un mensaje te hace sentir apuro, miedo o mucha alegría, frená. Ese es el momento de desconfiar.'},
  {type:'order',title:'Me llegó algo raro, ¿qué hago?',lead:'Ordená qué conviene hacer.',steps:['No tocar ningún enlace ni adjunto','Fijarse quién lo manda y la dirección real','Entrar por la app o la web oficial escribiéndola vos','Si era falso, marcarlo como spam y borrarlo','Si ya pusiste datos, cambiar la contraseña enseguida'],why:'Y contale a alguien: a la próxima persona le puede servir.'}]},
 
-14:{mod:4,title:'Al día y en el café',icon:'update',tone:'coral',mins:30,
+14:{mod:4,title:'Al día y en el café',icon:'update',tone:'coral',mins:30,cfp:'Actividad 14 · Al día y en la calle',
  intro:'Las actualizaciones tapan agujeros de seguridad. Y las redes wifi públicas, como la del café o la plaza, tienen sus riesgos. Hoy vemos las dos cosas.',
  missions:[
  {type:'quiz',title:'¿Para qué actualizar?',lead:'Tres situaciones sobre actualizaciones.',items:[
@@ -238,10 +232,9 @@ var PR_SEG={
   ['search','Leer las noticias',0,'Leer noticias no expone tus datos.'],
   ['chat','Mandar un mensaje por WhatsApp',0,'WhatsApp cifra tus mensajes de punta a punta.'],
   ['eye','Mirar el pronóstico del tiempo',0,'Sin riesgo.'],
-  ['phone','Usar los datos móviles para entrar al banco',0,'¡Eso está bien! Es la alternativa segura.']],end:'En un wifi público: leer sí; bancos, compras y contraseñas, mejor con los datos del celular.'},
- {type:'check',title:'Poné tus equipos al día',lead:'Ahora en tus aparatos. Marcá lo que hiciste.',min:1,items:['<b>Windows:</b> Configuración › <b>Windows Update</b> › Buscar actualizaciones','<b>Android:</b> Ajustes › Sistema › <b>Actualización de software</b>','<b>iPhone:</b> Ajustes › General › <b>Actualización de software</b> › Actualizaciones automáticas','Activé la actualización automática de apps en la tienda del celular']}]},
+  ['phone','Usar los datos móviles para entrar al banco',0,'¡Eso está bien! Es la alternativa segura.']],end:'En un wifi público: leer sí; bancos, compras y contraseñas, mejor con los datos del celular.'}]},
 
-15:{mod:4,title:'¿Quién ve lo que publico?',icon:'eye',tone:'coral',mins:35,
+15:{mod:4,title:'¿Quién ve lo que publico?',icon:'eye',tone:'coral',mins:35,cfp:'Actividad 15 · Mi perfil, revisado',
  intro:'Lo que publicás en redes lo puede ver mucha más gente de la que imaginás. Hoy revisamos qué conviene mostrar y qué no.',
  missions:[
  {type:'spot',title:'El perfil de Tomás',lead:'Este es el perfil público de Tomás. Encontrá los <b>5 datos</b> que no debería mostrar.',need:5,win:'Perfil público · @tomi.panaderia',
@@ -251,24 +244,8 @@ var PR_SEG={
  {type:'quiz',title:'Situaciones de todos los días',lead:'¿Qué harías?',items:[
   {q:'Una app de juegos pide acceso a tus contactos y a tu ubicación.',opts:['Acepto todo','Niego los permisos que no necesita','Desinstalo el celular'],a:1,why:'Un juego no necesita tus contactos ni dónde estás.'},
   {q:'Un test viral te pregunta el nombre de tu primera mascota y tu calle de la infancia.',opts:['Lo contesto, es divertido','No lo contesto: son preguntas de seguridad','Lo comparto con amigos'],a:1,why:'Son las mismas preguntas que usan algunos sitios para recuperar claves.'},
-  {q:'Querés que solo tus amigos vean tus fotos de Instagram.',opts:['Pongo la cuenta privada','Borro todas las fotos','No se puede'],a:0,why:'Configuración › Privacidad de la cuenta › Cuenta privada.'}]},
- {type:'check',title:'Revisá tu privacidad',lead:'Elegí una red social o tu correo y revisá estos puntos. Marcá lo que hiciste.',min:2,items:['Revisé quién puede ver mis publicaciones (público, amigos, solo yo)','Saqué de mi perfil la fecha de nacimiento completa, la dirección o el teléfono','Revisé qué apps tienen acceso a mi cuenta y quité las que no uso','Apagué la ubicación en las publicaciones','Revisé los permisos de cámara, micrófono y ubicación en el celular']}]},
+  {q:'Querés que solo tus amigos vean tus fotos de Instagram.',opts:['Pongo la cuenta privada','Borro todas las fotos','No se puede'],a:0,why:'Configuración › Privacidad de la cuenta › Cuenta privada.'}]}]},
 
-16:{mod:4,title:'Mi plan de seguridad',icon:'calendar',tone:'coral',mins:40,
- intro:'Cerramos el módulo armando tu plan personal: qué copiar, cuándo y dónde, y los hábitos que vas a mantener.',
- missions:[
- {type:'quiz',title:'Repaso exprés',lead:'Cuatro preguntas de todo el módulo.',items:[
-  {q:'Te llega un mensaje urgente del «banco» con un enlace. Lo primero es…',opts:['Tocar el enlace para ver','No tocar y entrar por la app oficial','Responder pidiendo más datos'],a:1,why:'Nunca por el enlace: siempre por la app o la web oficial.'},
-  {q:'¿Cuál es la forma más segura de entrar al banco desde un café?',opts:['El wifi del café','Los datos móviles del celular','La compu del café'],a:1,why:'Tus datos móviles no los comparte nadie más.'},
-  {q:'¿Qué conviene hacer con las actualizaciones?',opts:['Dejarlas automáticas','Posponerlas siempre','Instalarlas una vez al año'],a:0,why:'Automáticas, en un horario cómodo.'},
-  {q:'Un test viral te pide tu fecha de nacimiento completa. ¿Qué hacés?',opts:['La pongo','No la pongo'],a:1,why:'Es un dato que se usa para robar identidad.'}]},
- {type:'list',title:'Qué voy a copiar',lead:'Armá tu plan de copias. Elegí de 3 a 5 cosas.',
-  sug:['Fotos del celular','Documentos importantes (escaneados)','Trabajos del curso','Contactos','Conversaciones de WhatsApp'],
-  qs:[['¿Dónde?',['Nube','Pendrive o disco','Otra compu'],'dónde:'],['¿Cada cuánto?',['Automático','Cada semana','Cada mes'],'frecuencia:'],['¿Ya lo hacés?',['Sí','Todavía no'],'ya lo hago:']]},
- {type:'list',title:'Mis hábitos',lead:'Elegí al menos 3 hábitos que te comprometés a mantener.',min:3,
-  sug:['Actualizaciones automáticas en el celular','Verificación en dos pasos en WhatsApp','No entrar al banco desde wifi público','Revisar la privacidad de mis redes cada 6 meses','No tocar enlaces de mensajes inesperados','Contraseñas distintas con un gestor'],
-  qs:[['¿Desde cuándo?',['Ya lo hago','Desde esta semana','Este mes'],'desde:']]},
- {type:'order',title:'Si me roban el celular',lead:'Ordená qué hacer, de lo más urgente a lo menos.',steps:['Desde otro equipo, bloquear el celular o borrarlo a distancia (Google «Encontrar mi dispositivo» o «Buscar» de Apple)','Avisar al banco y a la billetera virtual','Pedir a la compañía que bloquee la línea','Cambiar las contraseñas del correo y las redes','Recuperar todo desde las copias en un celular nuevo'],why:'Si tenías copias y verificación en dos pasos, perdiste un aparato, no tu vida digital.'}]},
 
 /* ================= MÓDULO V ================= */
 17:{mod:5,title:'No confíes en lo que escriben',icon:'form',tone:'green',mins:35,
@@ -323,7 +300,7 @@ var PR_SEG={
   html:'<div>1  '+SN('Leer el comentario está bien.','comentario = leer("comentario")')+'</div><div>2  '+SN('Controlar el largo está muy bien.','si largo(comentario) &gt; 500: rechazar')+'</div><div>3  '+SP('Acá pega el comentario como si fuera parte de la página. Lo correcto es mostrarlo como texto (escapado).','pagina.agregarHTML(comentario)')+'</div><div>4  '+SN('Guardar es normal.','guardar(comentario)')+'</div>',end:'La corrección: <b>pagina.agregarTexto(comentario)</b>, que muestra los símbolos sin obedecerlos.'},
  {type:'order',title:'La receta contra el XSS',lead:'Ordená lo que hace un sistema seguro con un comentario.',steps:['Recibe el comentario','Revisa el largo y el formato (validación)','Lo guarda','Al mostrarlo, convierte &lt; y &gt; en texto (escapa)','La página lo muestra como texto común'],why:'Validar al entrar y escapar al mostrar: las dos defensas juntas.'}]},
 
-20:{mod:5,title:'Consultas con trampa (SQL Injection)',icon:'database',tone:'green',mins:40,
+20:{mod:5,title:'Consultas con trampa (SQL Injection)',icon:'database',tone:'green',mins:40,cfp:'Actividad 20 · Revisión de seguridad del sistema de la panadería',
  intro:'Los sistemas guardan datos en bases de datos y les hacen «consultas». Si mezclan lo que escribe la persona con la consulta, alguien puede cambiarle el sentido. Lo vemos solo como concepto, sin programar.',
  missions:[
  {type:'quiz',title:'Una base de datos, en criollo',lead:'Una base de datos es como una planilla gigante. Cada <b>tabla</b> es una hoja, cada <b>fila</b> es un registro, y una <b>consulta</b> es una pregunta que le hace el sistema.',items:[

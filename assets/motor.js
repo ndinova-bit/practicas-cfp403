@@ -53,6 +53,7 @@ function pantallaIngreso(titulo,texto,alEntrar){
     ingresar(u,c).then(alEntrar,function(e){$('#lb').disabled=false;$('#lb').textContent='Ingresar';$('#lf').className='fb no';$('#lf').textContent=/invalid/i.test(e.message)?'DNI/correo o contraseña incorrectos.':e.message})}
   $('#lb').onclick=go;$('#lp').onkeydown=function(e){if(e.key==='Enter')go()};window.scrollTo(0,0)}
 function pieSesion(){return SES&&SES.perfil?'<p class="hint" style="text-align:center;margin-top:18px">Ingresaste como <b>'+esc(SES.perfil.nombre)+'</b> · <a href="#" onclick="salir();location.hash=\'#/\';render();return false">salir</a></p>':''}
+function recordatorioCFP(p){return p.cfp?'<div class="fb info" style="display:block">📌 <b>Esta clase tiene otra actividad:</b> «'+esc(p.cfp)+'», en la <b>plataforma del CFP</b>. Esa la corrige tu docente: no te olvides de hacerla.</div>':''}
 function startPractice(tid,id){
   var t=TRAYECTOS[tid],p=t.practicas[id];
   $('#homeBtn').style.display='inline-block';$('#homeBtn').onclick=function(){location.hash='#/'+tid};$('#hT').textContent='Práctica '+id+' · '+p.title;$('#hS').textContent=t.nombre+' · Módulo '+ROM[p.mod]+' · Clase '+id;$('#steps').innerHTML='';
@@ -60,12 +61,28 @@ function startPractice(tid,id){
   var per=SES.perfil;
   if(per.trayectos.indexOf(tid)<0){app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('warning','amber')+'</div><h1 style="text-align:center">No figurás inscripto/a en este trayecto</h1><p class="lead" style="text-align:center">Para hacer las prácticas de <b>'+esc(t.nombre)+'</b> tenés que estar inscripto/a y confirmado/a en ese trayecto en la plataforma del CFP. Consultá con preceptoría o con tu docente.</p><button class="btn alt" id="rr">Ya me confirmaron: volver a revisar</button>'+pieSesion()+'</section>';
     $('#rr').onclick=function(){$('#rr').disabled=true;actualizarPerfil().then(function(){startPractice(tid,id)},function(e){if(!SES)startPractice(tid,id);else{$('#rr').disabled=false;alert(e.message)}})};return}
-  S={t:t,id:id,p:p,per:codigoDe(per),mi:-1,pts:[],max:[],log:[]};steps();
-  app.innerHTML='<section class="screen"><div class="intro-ic">'+ic(p.icon,p.tone)+'</div><span class="tag">Práctica '+id+'</span><h1>'+esc(p.title)+'</h1><p class="lead">'+p.intro+'</p>'+
-  '<div class="card"><b>Hola, '+esc(per.nombre.split(', ')[1]||per.nombre)+'</b><p class="hint">Tu resultado se guarda solo cuando termines. '+p.missions.length+' misiones · unos '+(p.mins||35)+' minutos. Si te equivocás, te explica y seguís.</p><button class="btn" id="go">Empezar</button></div>'+pieSesion()+'</section>';
-  $('#go').onclick=function(){next()};
+  var nombre=per.nombre.split(', ')[1]||per.nombre;
+  app.innerHTML='<section class="screen"><div class="intro-ic">'+ic(p.icon,p.tone)+'</div><span class="tag">Práctica '+id+'</span><h1>'+esc(p.title)+'</h1><p class="lead">'+p.intro+'</p><div class="card" id="est">Revisando tu nota en la plataforma del CFP…</div>'+recordatorioCFP(p)+pieSesion()+'</section>';
   window.scrollTo(0,0);
+  estadoEnCFP(tid,id).then(function(e){
+    var st=e.estado,h='<b>Hola, '+esc(nombre)+'</b>',info=p.missions.length+' misiones · unos '+(p.mins||35)+' minutos.',btns='';
+    var rev=store('rev-'+tid+'-'+id);
+    var bPract='<button class="btn alt" data-m="practica">Practicar sin nota</button>',bRev=rev?'<button class="btn alt" data-m="revision">Ver en qué fallé</button>':'';
+    if(st==='primer_intento'){h+='<p class="hint">'+info+' <b>Este intento es el que vale la nota.</b> Leé con atención: si te equivocás, te explica y seguís.</p>';btns='<button class="btn" data-m="nota">Empezar</button>'}
+    else if(st==='reintento'){h+='<p class="hint">'+(e.nota!=null?'Tu nota es <b>'+esc(e.nota)+'</b>. ':'Tu docente te habilitó otro intento. ')+'Te queda'+(e.reintentos>1?'n <b>'+e.reintentos+' reintentos</b>':' <b>1 reintento</b>')+'. En un reintento, la nota máxima es <b>70</b>.</p>';btns='<button class="btn" data-m="nota">Hacer el reintento</button>'+bRev+bPract}
+    else if(st==='aprobada'||st==='evaluada'||st==='agotada'){h+='<p class="hint">Tu nota en esta práctica: <b>'+esc(e.nota)+'</b>. '+(st==='evaluada'?'Tu docente ya la evaluó.':st==='agotada'?'Ya usaste tus reintentos: si necesitás otro, hablá con tu docente.':'¡Aprobada!')+' Podés repasarla cuando quieras: no cambia tu nota.</p>';btns=bRev+bPract.replace('btn alt','btn')}
+    else if(st==='fuera_de_plazo'){h+='<p class="hint">Venció el plazo de esta práctica en la plataforma del CFP. Podés repasarla, pero no vale nota. Si necesitás una prórroga, hablá con tu docente.</p>';btns=bRev+bPract.replace('btn alt','btn')}
+    else{var msg=st==='sin_clase'?'Tu docente todavía no publicó esta práctica en la plataforma del CFP: tu resultado queda registrado y la nota se carga cuando la publique.':st==='no_inscripto'?'Estás como administrador/a: tu resultado queda registrado acá, pero no se carga nota.':'No pudimos consultar tu nota en la plataforma del CFP. Podés hacer la práctica igual: la nota se carga cuando vuelva la conexión.';
+      h+='<p class="hint">'+info+' '+msg+'</p>';btns='<button class="btn" data-m="nota">Empezar</button>'}
+    $('#est').innerHTML=h+btns;
+    $('#est').querySelectorAll('button').forEach(function(b){b.onclick=function(){var m=b.dataset.m;if(m==='revision')return verRevision(tid,id);
+      S={t:t,id:id,p:p,per:codigoDe(per),modo:m,mi:-1,pts:[],max:[],log:[],rev:[]};steps();next()}});
+  });
 }
+function verRevision(tid,id){var p=TRAYECTOS[tid].practicas[id],rev=store('rev-'+tid+'-'+id)||[];
+  app.innerHTML='<section class="screen"><span class="tag">Práctica '+id+'</span><h1>En qué fallaste</h1><p class="lead">'+esc(p.title)+'</p>'+htmlRevision(rev)+'<button class="btn alt" onclick="startPractice(\''+tid+'\','+id+')">Volver</button></section>';window.scrollTo(0,0)}
+function htmlRevision(rev){if(!rev||!rev.length)return '<div class="fb ok" style="display:block"><b>¡No fallaste en nada!</b> Todo bien al primer intento.</div>';
+  return '<div class="card"><b>Para repasar</b>'+rev.map(function(r){return '<div class="task" style="display:block"><span class="hint">'+esc(r.m)+'</span><br>'+r.t+(r.ok?'<br><b style="color:#277A52">Correcto: '+r.ok+'</b>':'')+(r.why?'<br><span class="hint">'+r.why+'</span>':'')+'</div>'}).join('')+'</div>'}
 function steps(){var h='';for(var i=0;i<S.p.missions.length;i++)h+='<i class="'+(i<S.mi?'done':(i===S.mi?'on':''))+'"></i>';$('#steps').innerHTML=h}
 function next(){S.mi++;steps();window.scrollTo(0,0);if(S.mi>=S.p.missions.length)return finish();var m=S.p.missions[S.mi];
   var wrap='<section class="screen"><span class="tag">Misión '+(S.mi+1)+' de '+S.p.missions.length+'</span><h2>'+esc(m.title)+'</h2><p class="lead">'+m.lead+'</p><div id="mz"></div><button class="btn" id="nx" style="display:none">'+(S.mi+1<S.p.missions.length?'Siguiente misión':'Ver mi resultado')+'</button></section>';
@@ -82,7 +99,7 @@ TYPES.quiz=function(m,z){var i=0,first,score=0,log=[];
     z.querySelectorAll('.opts button').forEach(function(b){b.onclick=function(){var k=+b.dataset.k,f=$('#f');
       if(k===it.a){b.className='right';if(first)score++;log.push((i+1)+(first?'✓':'✗'));f.className='fb ok';f.innerHTML='<b>¡Bien!</b> '+it.why;
         z.querySelectorAll('.opts button').forEach(function(x){x.disabled=true});$('#qn').style.display='block';}
-      else{b.className='wrong';b.disabled=true;first=false;f.className='fb no';f.innerHTML=(it.hint||'No es esa. Leé de nuevo y probá otra.');}}});
+      else{if(first)S.rev.push({m:m.title,t:(it.q||'').replace(/<[^>]+>/g,''),ok:it.opts[it.a].replace(/<br>/g,' ').replace(/<[^>]+>/g,''),why:it.why});b.className='wrong';b.disabled=true;first=false;f.className='fb no';f.innerHTML=(it.hint||'No es esa. Leé de nuevo y probá otra.');}}});
     $('#qn').onclick=function(){i++;if(i<m.items.length)show();else{z.innerHTML='<div class="fb ok">Terminaste: '+score+' de '+m.items.length+' al primer intento.</div>';done(score,m.items.length,'aciertos '+score+'/'+m.items.length+' ('+log.join(' ')+')')}};}
   show();};
 /* --- SORT --- */
@@ -93,7 +110,7 @@ TYPES.sort=function(m,z){var sel=null,left=m.items.length,score=0,tried={};
   z.querySelectorAll('.bin').forEach(function(bn){bn.onclick=function(){if(!sel)return;var k=+sel.dataset.k,b=+bn.dataset.b,f=$('#f'),it=m.items[k];
     if(it[1]===b){if(!tried[k])score++;bn.querySelector('div').appendChild(el('<div class="it">'+it[0]+'</div>'));sel.remove();sel=null;left--;f.className='fb ok';f.innerHTML='<b>¡Sí!</b> '+(it[2]||'Va en «'+m.bins[b]+'».');
       if(!left){f.innerHTML='<b>¡Todo ordenado!</b> '+(m.end||'');done(score,m.items.length,'al primer intento '+score+'/'+m.items.length)}}
-    else{tried[k]=1;f.className='fb no';f.innerHTML=m.hint||'Esa no es su caja. Probá otra.'}}});};
+    else{if(!tried[k])S.rev.push({m:m.title,t:it[0],ok:m.bins[it[1]],why:it[2]||''});tried[k]=1;f.className='fb no';f.innerHTML=m.hint||'Esa no es su caja. Probá otra.'}}});};
 /* --- SPOT (texto clickeable en una pantalla simulada) --- */
 TYPES.spot=function(m,z){var need=m.need,found=0,miss=0,got={};
   z.innerHTML='<div class="mock'+(m.dark?' dark':'')+'"><div class="bar2"><i style="background:#E06A5B"></i><i style="background:#E3A03A"></i><i style="background:#3C9D6E"></i>&nbsp;'+esc(m.win||'')+'</div><div class="body">'+m.html+'</div></div>'+
@@ -102,7 +119,7 @@ TYPES.spot=function(m,z){var need=m.need,found=0,miss=0,got={};
     if(s.dataset.ok){if(got[ix])return;got[ix]=1;found++;s.classList.add('found');f.className='fb ok';f.textContent='¡Encontraste uno!';$('#fl').appendChild(el('<li>'+s.dataset.ok+'</li>'));
       $('#c').textContent='Encontrados: '+found+' de '+need;if(found>=need){f.innerHTML='<b>¡Los encontraste todos!</b> '+(m.end||'');$('#rv').style.display='none';done(need,need,'encontró '+need+'/'+need+(miss?' ('+miss+' toques de más)':''))}}
     else{miss++;s.classList.add('miss');setTimeout(function(){s.classList.remove('miss')},900);f.className='fb no';f.innerHTML=s.dataset.no||'Eso está bien. Seguí buscando.';if(miss>=3&&found<need)$('#rv').style.display='block'}}});
-  $('#rv').onclick=function(){z.querySelectorAll('.sp').forEach(function(s,ix){if(s.dataset.ok&&!got[ix]){got[ix]=1;s.classList.add('found');$('#fl').appendChild(el('<li>'+s.dataset.ok+'</li>'))}});
+  $('#rv').onclick=function(){z.querySelectorAll('.sp').forEach(function(s,ix){if(s.dataset.ok&&!got[ix]){S.rev.push({m:m.title,t:s.dataset.ok});got[ix]=1;s.classList.add('found');$('#fl').appendChild(el('<li>'+s.dataset.ok+'</li>'))}});
     $('#rv').style.display='none';$('#c').textContent='Encontrados por vos: '+found+' de '+need;done(found,need,'encontró '+found+'/'+need+' (pidió ayuda)')};};
 /* --- TILES (buscar los riesgosos entre tarjetas con ícono) --- */
 TYPES.tiles=function(m,z){var need=m.items.filter(function(x){return x[2]}).length,found=0,miss=0,got={};
@@ -112,7 +129,7 @@ TYPES.tiles=function(m,z){var need=m.items.filter(function(x){return x[2]}).leng
     if(it[2]){if(got[k])return;got[k]=1;found++;t.classList.add('found');f.className='fb ok';f.textContent='¡Encontraste uno!';$('#fl').appendChild(el('<li><b>'+it[1]+'.</b> '+it[3]+'</li>'));$('#c').textContent='Encontrados: '+found+' de '+need;
       if(found>=need){f.innerHTML='<b>¡Los encontraste todos!</b> '+(m.end||'');$('#rv').style.display='none';done(need,need,'encontró '+need+'/'+need)}}
     else{miss++;t.classList.add('miss');setTimeout(function(){t.classList.remove('miss')},900);f.className='fb no';f.innerHTML=it[3]||'Eso está bien.';if(miss>=3&&found<need)$('#rv').style.display='block'}}});
-  $('#rv').onclick=function(){m.items.forEach(function(it,k){if(it[2]&&!got[k]){got[k]=1;$('.tile[data-k="'+k+'"]').classList.add('found');$('#fl').appendChild(el('<li><b>'+it[1]+'.</b> '+it[3]+'</li>'))}});$('#rv').style.display='none';done(found,need,'encontró '+found+'/'+need+' (pidió ayuda)')};};
+  $('#rv').onclick=function(){m.items.forEach(function(it,k){if(it[2]&&!got[k]){S.rev.push({m:m.title,t:'<b>'+it[1]+'.</b> '+it[3]});got[k]=1;$('.tile[data-k="'+k+'"]').classList.add('found');$('#fl').appendChild(el('<li><b>'+it[1]+'.</b> '+it[3]+'</li>'))}});$('#rv').style.display='none';done(found,need,'encontró '+found+'/'+need+' (pidió ayuda)')};};
 /* --- ORDER --- */
 TYPES.order=function(m,z){var picked=[],tries=0;
   function draw(){var ord=shuffle(m.steps.map(function(x,k){return k}));picked=[];
@@ -120,7 +137,7 @@ TYPES.order=function(m,z){var picked=[],tries=0;
     z.querySelectorAll('.ord button').forEach(function(b){b.onclick=function(){if(b.classList.contains('picked'))return;var k=+b.dataset.k,f=$('#f');
       if(k===picked.length){picked.push(k);b.classList.add('picked');b.querySelector('b').textContent=picked.length;
         if(picked.length===m.steps.length){f.className='fb ok';f.innerHTML='<b>¡Orden perfecto!</b> '+(m.why||'');done(tries===0?1:(tries===1?0.5:0),1,tries===0?'al primer intento':'con '+tries+' reintentos')}}
-      else{tries++;f.className='fb no';f.innerHTML=(m.hint||'Ese no va ahí.')+' Volvé a empezar.';setTimeout(draw,1300)}}});}
+      else{if(!tries)S.rev.push({m:m.title,t:'El orden correcto es:',ok:m.steps.map(function(x,i){return (i+1)+'. '+x}).join(' · '),why:m.why||''});tries++;f.className='fb no';f.innerHTML=(m.hint||'Ese no va ahí.')+' Volvé a empezar.';setTimeout(draw,1300)}}});}
   draw();};
 /* --- LIST (inventario / plan personal: completar, no tiene error) --- */
 TYPES.list=function(m,z){var items=[];
@@ -213,26 +230,27 @@ TYPES.sqli=function(m,z){var cnt=0,doneT={};
     m.tasks.forEach(function(t,k){if(!doneT[k]&&new RegExp(t[1],'i').test(v)){doneT[k]=1;cnt++;$('#tk'+k).classList.add('done')}});if(cnt===m.tasks.length)done(cnt,cnt,'tareas '+cnt+'/'+cnt)};};
 
 /* ---------------- FINAL ---------------- */
-var NOTA_MSG={cargada:['ok','✓ Tu nota quedó cargada en la plataforma del CFP.'],actualizada:['ok','✓ Mejoraste: se actualizó tu nota en la plataforma del CFP.'],
- sin_cambios:['info','Tu nota anterior en la plataforma del CFP era igual o mejor: queda la mejor.'],
- sin_clase:['info','Tu resultado quedó registrado. La nota va a pasar a la plataforma del CFP cuando el docente publique esta práctica allá: volvé a entrar a esta página más adelante.'],
+var NOTA_MSG={cargada:['ok','✓ Tu nota quedó cargada en la plataforma del CFP.'],recuperatorio:['ok','✓ Reintento registrado: se actualizó tu nota en la plataforma del CFP (máximo 70).'],
+ aprobada:['info','Esta práctica ya estaba aprobada: tu nota no cambia.'],evaluada:['info','Tu docente ya evaluó esta práctica: tu nota no cambia.'],agotada:['info','Ya usaste tus reintentos: tu nota no cambia. Si necesitás otro, hablá con tu docente.'],
+ sin_clase:['info','Tu resultado quedó registrado. La nota va a pasar a la plataforma del CFP cuando el docente publique esta práctica allá.'],
  fuera_de_plazo:['no','Venció el plazo de esta práctica en la plataforma del CFP, así que la nota no se cargó. Consultá con tu docente.'],
  no_inscripto:['info','Tu resultado quedó registrado (sin inscripción en este trayecto no se carga nota en la plataforma del CFP).'],
- error:['no','No pudimos conectar con la plataforma del CFP. Tu resultado quedó guardado acá: volvé a abrir esta práctica más tarde y se va a cargar.']};
+ error:['no','No pudimos conectar con la plataforma del CFP. Tu resultado quedó guardado acá: volvé a entrar al trayecto más tarde y se va a cargar.']};
 function finish(){var p=S.p,tot=0,pts=0;S.max.forEach(function(x,i){tot+=x;pts+=S.pts[i]});var score=Math.round(pts/tot*100);var code=mkCode(S.t,S.id,S.per,score);
-  var dk='hechas-'+S.t.id,d=store(dk)||{};if(d[S.id]==null||score>d[S.id])d[S.id]=score;store(dk,d);
-  var pend=store('pend-cfp')||{};pend[S.t.id+'|'+S.id]=d[S.id];store('pend-cfp',pend);
+  var tid=S.t.id,pid=S.id,conNota=S.modo==='nota';
   $('#steps').innerHTML=p.missions.map(function(){return '<i class="done"></i>'}).join('');
   var det=p.missions.map(function(m,i){return m.title+': '+S.log[i]});
+  if(conNota){var dk='hechas-'+tid,d=store(dk)||{};if(d[pid]==null||score>d[pid])d[pid]=score;store(dk,d);store('rev-'+tid+'-'+pid,S.rev)}
   var ok=score>=70;
-  app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('medal',ok?'green':'amber')+'</div><h1 style="text-align:center">'+(ok?'¡Práctica cumplida!':'¡Casi!')+'</h1><div class="big">'+score+' / 100</div>'+
-  '<p class="lead" style="text-align:center">'+(ok?'Muy bien.':'Para aprobar necesitás 70 o más. Volvé a intentarlo: ya conocés las respuestas, y queda tu mejor nota.')+'</p>'+
-  '<div class="fb info" id="gs" style="display:block;text-align:center">Guardando tu resultado…</div>'+
-  '<button class="btn alt" onclick="startPractice(\''+S.t.id+'\','+S.id+')">Volver a intentar</button><button class="btn alt" onclick="location.hash=\'#/'+S.t.id+'\'">Volver a las prácticas del trayecto</button>'+pieSesion()+'</section>';
-  var tid=S.t.id,pid=S.id;
-  guardarIntento({trayecto:tid,practica:pid,codigo_personal:S.per,puntaje:score,codigo:code,detalle:S.log}).then(function(){return notaEnCFP(tid,pid,d[pid],det)}).then(function(st){
-    var m=NOTA_MSG[st]||NOTA_MSG.error,g=$('#gs');if(g){g.className='fb '+m[0];g.textContent=m[1]}
-    if(st!=='error'&&st!=='sin_clase'){var pe=store('pend-cfp')||{};delete pe[tid+'|'+pid];store('pend-cfp',pe)}});
+  app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('medal',ok?'green':'amber')+'</div><h1 style="text-align:center">'+(conNota?(ok?'¡Práctica cumplida!':'¡Casi!'):'Repaso terminado')+'</h1><div class="big">'+score+' / 100</div>'+
+  (conNota?'<div class="fb info" id="gs" style="display:block;text-align:center">Guardando tu resultado…</div>':'<p class="lead" style="text-align:center">Fue un repaso sin nota: tu nota en la plataforma del CFP no cambia.</p>')+
+  htmlRevision(S.rev)+recordatorioCFP(p)+
+  '<button class="btn alt" onclick="startPractice(\''+tid+'\','+pid+')">Volver al inicio de la práctica</button><button class="btn alt" onclick="location.hash=\'#/'+tid+'\'">Volver a las prácticas del trayecto</button>'+pieSesion()+'</section>';
+  var g0=guardarIntento({trayecto:tid,practica:pid,codigo_personal:S.per,puntaje:score,codigo:code,detalle:(conNota?[]:['[repaso sin nota]']).concat(S.log)});
+  if(conNota){var pend=store('pend-cfp')||{};pend[tid+'|'+pid]=score;store('pend-cfp',pend);
+    g0.then(function(){return notaEnCFP(tid,pid,score,det)}).then(function(st){
+      var m=NOTA_MSG[st]||NOTA_MSG.error,g=$('#gs');if(g){g.className='fb '+m[0];g.textContent=m[1]}
+      if(st!=='error'&&st!=='sin_clase'){var pe=store('pend-cfp')||{};delete pe[tid+'|'+pid];store('pend-cfp',pe)}})}
   window.scrollTo(0,0);}
 // Reintenta pasar a la plataforma del CFP las notas que quedaron pendientes (sin conexión o práctica todavía no publicada)
 function sincronizarPendientes(){if(!SES||!SES.perfil)return;var pe=store('pend-cfp')||{};Object.keys(pe).forEach(function(k){var x=k.split('|');
