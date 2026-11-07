@@ -42,7 +42,7 @@ function homeTrayecto(t){header(t.nombre,'Prácticas del trayecto');
   h+=pieSesion()+'<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0)}
 
 /* ---------------- PRÁCTICA ---------------- */
-function codigoDe(per){return (String(per.apellido||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-ZÑ]/g,'')||'ESTUDIANTE')+(per.dni4||'0000')}
+function codigoDe(per){var ap=per.apellido||String(per.nombre||'').split(',')[0].trim().split(/\s+/).pop();return (String(ap||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-ZÑ]/g,'')||'ESTUDIANTE')+(per.dni4||'0000')}
 // Pantalla de ingreso con el usuario de la plataforma del CFP (la usan estudiantes y docentes)
 function pantallaIngreso(titulo,texto,alEntrar){
   app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('lock','navy')+'</div><h1 style="text-align:center">'+titulo+'</h1><p class="lead" style="text-align:center">'+texto+'</p>'+
