@@ -28,7 +28,7 @@ function homeGeneral(){header();
   var h='<section class="screen"><div class="intro-ic">'+ic('medal','teal')+'</div><h1 style="text-align:center">Plataforma de prácticas</h1><p class="lead" style="text-align:center">Elegí el trayecto que estás cursando.</p>';
   ORDEN.forEach(function(id){var t=TRAYECTOS[id],n=Object.keys(t.practicas).length;
     h+='<button class="tcard"'+(n?' onclick="location.hash=\'#/'+id+'\'"':' disabled')+'>'+ic(t.icono,t.tono)+'<span><b>'+esc(t.nombre)+'</b><br><span class="hint">'+(n?n+' prácticas':'Próximamente')+'</span></span>'+(n?'':'<span class="soon">Pronto</span>')+'</button>'});
-  h+='<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0)}
+  h+=pieSesion()+'<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0)}
 function homeTrayecto(t){header(t.nombre,'Prácticas del trayecto');
   var done=store('hechas-'+t.id)||{};var mods=Object.keys(t.modulos).map(Number).sort(function(a,b){return a-b});
   var h='<section class="screen"><div class="intro-ic">'+ic(t.icono,t.tono)+'</div><h1 style="text-align:center">'+esc(t.nombre)+'</h1><p class="lead" style="text-align:center">Elegí la práctica que te indica la clase que estás haciendo.</p>';
@@ -39,20 +39,31 @@ function homeTrayecto(t){header(t.nombre,'Prácticas del trayecto');
   mods.forEach(function(mo,i){var col=TN[TONOS[i%TONOS.length]][2];h+='<h3>Módulo '+ROM[mo]+' · '+esc(t.modulos[mo])+'</h3><div class="plist">';
     Object.keys(t.practicas).map(Number).sort(function(a,b){return a-b}).forEach(function(id){var p=t.practicas[id];if(p.mod!==mo)return;
       h+='<button class="pitem" onclick="location.hash=\'#/'+t.id+'/'+id+'\'"><span class="num" style="background:'+col+'">'+id+'</span><span><b>'+esc(p.title)+'</b><br><span class="hint">Clase '+id+'</span></span>'+(done[id]!=null?'<span class="st">'+done[id]+'/100</span>':'')+'</button>'});h+='</div>'});
-  h+='<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0)}
+  h+=pieSesion()+'<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0)}
 
 /* ---------------- PRÁCTICA ---------------- */
+function codigoDe(per){return (String(per.apellido||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-ZÑ]/g,'')||'ESTUDIANTE')+(per.dni4||'0000')}
+// Pantalla de ingreso con el usuario de la plataforma del CFP (la usan estudiantes y docentes)
+function pantallaIngreso(titulo,texto,alEntrar){
+  app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('lock','navy')+'</div><h1 style="text-align:center">'+titulo+'</h1><p class="lead" style="text-align:center">'+texto+'</p>'+
+  '<div class="card"><b>Ingresá con tu usuario de la plataforma del CFP</b><p class="hint">El mismo DNI (o correo) y la misma contraseña que usás para entrar a la plataforma de cursos. Lo hacés una sola vez en este dispositivo.</p>'+
+  '<input type="text" id="lu" placeholder="DNI o correo" autocomplete="username" inputmode="text"><input type="password" id="lp" placeholder="Contraseña" style="margin-top:8px" autocomplete="current-password"><button class="btn" id="lb">Ingresar</button><div class="fb" id="lf"></div></div>'+
+  '<p class="hint" style="text-align:center">¿No recordás tu contraseña? Pedile a preceptoría que la restablezca.</p></section>';
+  function go(){var u=$('#lu').value.trim(),c=$('#lp').value;if(!u||!c)return;$('#lb').disabled=true;$('#lb').textContent='Ingresando…';
+    ingresar(u,c).then(alEntrar,function(e){$('#lb').disabled=false;$('#lb').textContent='Ingresar';$('#lf').className='fb no';$('#lf').textContent=/invalid/i.test(e.message)?'DNI/correo o contraseña incorrectos.':e.message})}
+  $('#lb').onclick=go;$('#lp').onkeydown=function(e){if(e.key==='Enter')go()};window.scrollTo(0,0)}
+function pieSesion(){return SES&&SES.perfil?'<p class="hint" style="text-align:center;margin-top:18px">Ingresaste como <b>'+esc(SES.perfil.nombre)+'</b> · <a href="#" onclick="salir();location.hash=\'#/\';render();return false">salir</a></p>':''}
 function startPractice(tid,id){
-  var t=TRAYECTOS[tid],p=t.practicas[id];S={t:t,id:id,p:p,per:store('per')||'',mi:-1,pts:[],max:[],log:[]};
-  $('#homeBtn').style.display='inline-block';$('#homeBtn').onclick=function(){location.hash='#/'+tid};$('#hT').textContent='Práctica '+id+' · '+p.title;$('#hS').textContent=t.nombre+' · Módulo '+ROM[p.mod]+' · Clase '+id;
-  steps();
+  var t=TRAYECTOS[tid],p=t.practicas[id];
+  $('#homeBtn').style.display='inline-block';$('#homeBtn').onclick=function(){location.hash='#/'+tid};$('#hT').textContent='Práctica '+id+' · '+p.title;$('#hS').textContent=t.nombre+' · Módulo '+ROM[p.mod]+' · Clase '+id;$('#steps').innerHTML='';
+  if(!SES||!SES.perfil)return pantallaIngreso('Práctica '+id,esc(p.title),function(){startPractice(tid,id)});
+  var per=SES.perfil;
+  if(per.trayectos.indexOf(tid)<0){app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('warning','amber')+'</div><h1 style="text-align:center">No figurás inscripto/a en este trayecto</h1><p class="lead" style="text-align:center">Para hacer las prácticas de <b>'+esc(t.nombre)+'</b> tenés que estar inscripto/a y confirmado/a en ese trayecto en la plataforma del CFP. Consultá con preceptoría o con tu docente.</p><button class="btn alt" id="rr">Ya me confirmaron: volver a revisar</button>'+pieSesion()+'</section>';
+    $('#rr').onclick=function(){$('#rr').disabled=true;actualizarPerfil().then(function(){startPractice(tid,id)},function(e){if(!SES)startPractice(tid,id);else{$('#rr').disabled=false;alert(e.message)}})};return}
+  S={t:t,id:id,p:p,per:codigoDe(per),mi:-1,pts:[],max:[],log:[]};steps();
   app.innerHTML='<section class="screen"><div class="intro-ic">'+ic(p.icon,p.tone)+'</div><span class="tag">Práctica '+id+'</span><h1>'+esc(p.title)+'</h1><p class="lead">'+p.intro+'</p>'+
-  '<div class="card"><b>Tu código personal</b><p class="hint">Tu apellido y las últimas 4 cifras de tu DNI, todo junto. Ejemplo: <b>GOMEZ1234</b>. Es el mismo que usás en la plataforma.</p>'+
-  '<input type="text" id="per" autocomplete="off" placeholder="APELLIDO1234" style="text-transform:uppercase" value="'+esc(S.per)+'"><div class="err" id="e0"></div><button class="btn" id="go">Empezar</button></div>'+
-  '<p class="hint">'+p.missions.length+' misiones · unos '+(p.mins||35)+' minutos · funciona en el celular y en la compu. Si te equivocás, te explica y seguís.</p></section>';
-  $('#go').onclick=function(){var v=$('#per').value.trim().toUpperCase().replace(/\s+/g,'');
-    if(!/^[A-ZÁÉÍÓÚÑÜ]{2,}\d{4}$/.test(v)){$('#e0').textContent='Revisalo: tu apellido y 4 números, sin espacios. Ejemplo: GOMEZ1234';return}
-    S.per=v;store('per',v);next();};
+  '<div class="card"><b>Hola, '+esc(per.nombre.split(', ')[1]||per.nombre)+'</b><p class="hint">Tu resultado se guarda solo cuando termines. '+p.missions.length+' misiones · unos '+(p.mins||35)+' minutos. Si te equivocás, te explica y seguís.</p><button class="btn" id="go">Empezar</button></div>'+pieSesion()+'</section>';
+  $('#go').onclick=function(){next()};
   window.scrollTo(0,0);
 }
 function steps(){var h='';for(var i=0;i<S.p.missions.length;i++)h+='<i class="'+(i<S.mi?'done':(i===S.mi?'on':''))+'"></i>';$('#steps').innerHTML=h}
@@ -212,35 +223,27 @@ function finish(){var p=S.p,tot=0,pts=0;S.max.forEach(function(x,i){tot+=x;pts+=
   '<div class="card"><b>Paso 1 · Copiá tu resumen</b><p class="hint">Incluye tu código de práctica. Tocá el botón y se copia solo.</p><textarea class="sum" id="sm" readonly></textarea><button class="btn" id="cp">Copiar resumen</button><div class="hint" id="cpm" style="text-align:center;margin-top:6px"></div></div>'+
   '<div class="card"><b>Paso 2 · Pegalo en la plataforma</b><p class="hint" style="margin-bottom:0">Entrá a la plataforma del CFP, abrí la <b>Actividad '+S.id+'</b> y pegalo en el cuadro de respuesta (mantené apretado y elegí <b>Pegar</b>, o Ctrl+V). Después respondé las preguntas de la actividad y entregá. <b>Si no lo pegás en la plataforma, el docente no lo recibe.</b></p></div>'+
   '<div class="code">'+code+'</div><div class="hint" id="gs" style="text-align:center">Guardando tu intento…</div><button class="btn alt" onclick="startPractice(\''+S.t.id+'\','+S.id+')">Volver a intentar</button><button class="btn alt" onclick="location.hash=\'#/'+S.t.id+'\'">Volver a las prácticas del trayecto</button></section>';
-  $('#sm').value=t;gp.then(function(ok){var g=$('#gs');if(g)g.innerHTML=ok?'✓ Tu intento quedó registrado para el docente. Igual pegá el resumen en la actividad.':'No se pudo registrar el intento (¿sin internet?). No pasa nada: pegá el resumen en la actividad.'});$('#cp').onclick=function(){var ta=$('#sm');ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+  $('#sm').value=t;gp.then(function(ok){var g=$('#gs');if(g)g.innerHTML=ok?'✓ Tu intento quedó registrado para el docente. Igual pegá el resumen en la actividad.':'No se pudo registrar el intento (¿sin internet?). Volvé a intentarlo más tarde o pegá el resumen en la actividad.'});$('#cp').onclick=function(){var ta=$('#sm');ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
     if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(function(){msg(true)},function(){msg(ok)});else msg(ok)};
   function msg(ok){$('#cpm').textContent=ok?'¡Copiado! Ahora andá a la plataforma y pegalo en la actividad.':'Seleccioná el texto y copialo a mano (mantené apretado en el celular).'}
   window.scrollTo(0,0);}
 
 /* ---------------- DOCENTE (oculto: #/docente) ---------------- */
-var DOC={ses:null,datos:null};
-try{DOC.ses=JSON.parse(localStorage.getItem('doc-sesion')||'null')}catch(e){}
-function docGuardar(j,correo){DOC.ses={token:j.access_token,refresh:j.refresh_token,correo:correo||(DOC.ses&&DOC.ses.correo)||'',exp:Date.now()+(j.expires_in||3600)*1000-60000};try{localStorage.setItem('doc-sesion',JSON.stringify(DOC.ses))}catch(e){}}
-function docSalir(){DOC.ses=null;DOC.datos=null;try{localStorage.removeItem('doc-sesion')}catch(e){}location.hash='#/docente';teacher()}
-function docToken(){if(!DOC.ses)return Promise.reject(new Error('sin sesión'));if(DOC.ses.exp>Date.now())return Promise.resolve(DOC.ses.token);
-  return renovarSesion(DOC.ses.refresh).then(function(j){docGuardar(j);return j.access_token})}
-function docCargar(forzar){if(DOC.datos&&!forzar)return Promise.resolve(DOC.datos);return docToken().then(leerIntentos).then(function(d){DOC.datos=d;return d})}
+var DOC={datos:null};
+function docSalir(){salir();DOC.datos=null;location.hash='#/docente';teacher()}
+function docCargar(forzar){if(DOC.datos&&!forzar)return Promise.resolve(DOC.datos);return leerIntentos().then(function(d){d.forEach(function(r){r.codigo_personal=r.estudiante||r.codigo_personal||'(sin nombre)'});DOC.datos=d;return d})}
 function teacher(){
   var parts=location.hash.replace(/^#\/?/,'').split('/');var tid=parts[1],vista=parts[2]||'clases',sel=parts[3];
   header('Panel docente','Resultados de las prácticas');
-  if(!DOC.ses)return docLogin();
+  if(!SES||!SES.perfil)return pantallaIngreso('Panel docente','Resultados de las prácticas',teacher);
+  if(!SES.perfil.admin){app.innerHTML='<section class="screen"><h1>Panel docente</h1><div class="fb no" style="display:block">Este panel es solo para la dirección del CFP.</div>'+pieSesion()+'</section>';return}
   app.innerHTML='<section class="screen"><div class="card">Cargando resultados…</div></section>';
   docCargar().then(function(d){
     if(!tid||!TRAYECTOS[tid])return docTrayectos(d);
     docTrayecto(TRAYECTOS[tid],d.filter(function(r){return r.trayecto===tid}),vista,sel)},
-   function(e){if(/sesión|sin sesión|401/.test(e.message)){docSalir();return}app.innerHTML='<section class="screen"><div class="fb no" style="display:block">'+esc(e.message)+'</div><button class="btn alt" onclick="DOC.datos=null;teacher()">Reintentar</button></section>'})}
-function docPie(){return '<p class="hint" style="margin-top:24px">Sesión de <b>'+esc(DOC.ses.correo)+'</b> · <a href="#" onclick="DOC.datos=null;teacher();return false">actualizar datos</a> · <a href="#" onclick="docSalir();return false">salir</a></p>'+
+   function(e){if(e.status===401||/sesión/.test(e.message)){docSalir();return}app.innerHTML='<section class="screen"><div class="fb no" style="display:block">'+esc(e.message)+'</div><button class="btn alt" onclick="DOC.datos=null;teacher()">Reintentar</button></section>'})}
+function docPie(){return '<p class="hint" style="margin-top:24px">Sesión de <b>'+esc(SES.perfil.nombre)+'</b> · <a href="#" onclick="DOC.datos=null;teacher();return false">actualizar datos</a> · <a href="#" onclick="docSalir();return false">salir</a></p>'+
   '<details style="margin-top:8px"><summary class="hint" style="cursor:pointer">Verificar un código a mano</summary>'+docVerif()+'</details>'}
-function docLogin(){
-  app.innerHTML='<section class="screen"><h1>Panel docente</h1><p class="lead">Ingresá una sola vez: este dispositivo te recuerda hasta que toques «salir».</p><div class="card"><input type="text" id="dc" placeholder="Correo" autocomplete="username"><input type="password" id="dp" placeholder="Contraseña" style="margin-top:8px" autocomplete="current-password"><button class="btn" id="db">Ingresar</button><div class="fb" id="df"></div></div></section>';
-  function go(){var c=$('#dc').value.trim().toLowerCase(),p=$('#dp').value;if(!c||!p)return;$('#db').disabled=true;
-    ingresarDocente(c,p).then(function(j){docGuardar(j,c);teacher()},function(e){$('#db').disabled=false;$('#df').className='fb no';$('#df').textContent=/invalid/i.test(e.message)?'Correo o contraseña incorrectos.':e.message})}
-  $('#db').onclick=go;$('#dp').onkeydown=function(e){if(e.key==='Enter')go()}}
 function mejores(rows){var g={};rows.forEach(function(r){var k=r.practica+'|'+r.codigo_personal;var x=g[k]||(g[k]={p:r.practica,c:r.codigo_personal,best:-1,n:0,last:r.creado,list:[]});x.n++;x.list.push(r);if(r.puntaje>x.best)x.best=r.puntaje;if(r.creado>x.last)x.last=r.creado});return Object.keys(g).map(function(k){return g[k]})}
 function fecha(s){return new Date(s).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})}
 function nota(b){return '<b style="color:'+(b>=70?'#277A52':'#B9483B')+'">'+b+'</b>'}

@@ -12,7 +12,8 @@ en el celular y en la compu.
 | `assets/motor.js` | El motor: pantallas, tipos de misión, puntaje, resumen y verificador docente. |
 | `assets/estilos.css` | Estilos. |
 | `assets/iconos.js` | Íconos. |
-| `assets/config.js` | Conexión con Supabase (vacía hasta conectarla). |
+| `assets/config.js` | Ingreso con el usuario de la plataforma del CFP y llamadas a la función `practicas`. |
+| `supabase/functions/practicas/index.ts` | Función de Supabase: comprueba la inscripción y guarda/lee intentos. |
 | `trayectos/*.js` | **Un archivo por trayecto**, con sus módulos y prácticas. |
 
 ## Direcciones
@@ -29,3 +30,11 @@ en el celular y en la compu.
 
 Cada trayecto tiene su propio prefijo de código (`P` Seguridad, `PC` Pensamiento
 Computacional, `PL` Planillas), así los códigos de práctica no se confunden.
+
+## Cómo se controla quién entra
+
+1. El estudiante ingresa con su usuario de la plataforma del CFP (DNI o correo y contraseña).
+2. La función `practicas` (proyecto `practicas-cfp403`) le pregunta a la plataforma del CFP quién es
+   y en qué trayectos tiene inscripción **ACTIVA**.
+3. Solo si está inscripto/a en ese trayecto, la función guarda el intento. Nadie más puede escribir ni leer la tabla.
+4. El panel docente (`#/docente`) solo lo ve el rol administrador de la plataforma del CFP.
