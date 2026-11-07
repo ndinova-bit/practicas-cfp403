@@ -16,6 +16,10 @@ function ingresarDocente(correo,clave){
   return fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':SUPABASE_CLAVE_PUBLICA,'Content-Type':'application/json'},body:JSON.stringify({email:correo,password:clave})})
     .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error_description||j.msg||'No se pudo ingresar');return j})});
 }
+function renovarSesion(refresh){
+  return fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SUPABASE_CLAVE_PUBLICA,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:refresh})})
+    .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error('La sesión venció. Volvé a ingresar.');return j})});
+}
 function leerIntentos(token){
   return fetch(SUPABASE_URL+'/rest/v1/intentos?select=*&order=creado.desc&limit=10000',{headers:{'apikey':SUPABASE_CLAVE_PUBLICA,'Authorization':'Bearer '+token}})
     .then(function(r){if(r.status===401)throw new Error('La sesión venció. Volvé a ingresar.');if(!r.ok)throw new Error('No se pudieron leer los intentos ('+r.status+')');return r.json()});
