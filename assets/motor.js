@@ -29,7 +29,7 @@ function homeGeneral(){header();
   ORDEN.forEach(function(id){var t=TRAYECTOS[id],n=Object.keys(t.practicas).length;
     h+='<button class="tcard"'+(n?' onclick="location.hash=\'#/'+id+'\'"':' disabled')+'>'+ic(t.icono,t.tono)+'<span><b>'+esc(t.nombre)+'</b><br><span class="hint">'+(n?n+' prácticas':'Próximamente')+'</span></span>'+(n?'':'<span class="soon">Pronto</span>')+'</button>'});
   h+=pieSesion()+'<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0)}
-function homeTrayecto(t){header(t.nombre,'Prácticas del trayecto');
+function homeTrayecto(t){header(t.nombre,'Prácticas del trayecto');sincronizarPendientes();
   var done=store('hechas-'+t.id)||{};var mods=Object.keys(t.modulos).map(Number).sort(function(a,b){return a-b});
   var h='<section class="screen"><div class="intro-ic">'+ic(t.icono,t.tono)+'</div><h1 style="text-align:center">'+esc(t.nombre)+'</h1><p class="lead" style="text-align:center">Elegí la práctica que te indica la clase que estás haciendo.</p>';
   if(mods.length>1){h+='<h3>Tus insignias</h3><div class="badges">';
@@ -213,20 +213,30 @@ TYPES.sqli=function(m,z){var cnt=0,doneT={};
     m.tasks.forEach(function(t,k){if(!doneT[k]&&new RegExp(t[1],'i').test(v)){doneT[k]=1;cnt++;$('#tk'+k).classList.add('done')}});if(cnt===m.tasks.length)done(cnt,cnt,'tareas '+cnt+'/'+cnt)};};
 
 /* ---------------- FINAL ---------------- */
+var NOTA_MSG={cargada:['ok','✓ Tu nota quedó cargada en la plataforma del CFP.'],actualizada:['ok','✓ Mejoraste: se actualizó tu nota en la plataforma del CFP.'],
+ sin_cambios:['info','Tu nota anterior en la plataforma del CFP era igual o mejor: queda la mejor.'],
+ sin_clase:['info','Tu resultado quedó registrado. La nota va a pasar a la plataforma del CFP cuando el docente publique esta práctica allá: volvé a entrar a esta página más adelante.'],
+ fuera_de_plazo:['no','Venció el plazo de esta práctica en la plataforma del CFP, así que la nota no se cargó. Consultá con tu docente.'],
+ no_inscripto:['info','Tu resultado quedó registrado (sin inscripción en este trayecto no se carga nota en la plataforma del CFP).'],
+ error:['no','No pudimos conectar con la plataforma del CFP. Tu resultado quedó guardado acá: volvé a abrir esta práctica más tarde y se va a cargar.']};
 function finish(){var p=S.p,tot=0,pts=0;S.max.forEach(function(x,i){tot+=x;pts+=S.pts[i]});var score=Math.round(pts/tot*100);var code=mkCode(S.t,S.id,S.per,score);
-  var dk='hechas-'+S.t.id,d=store(dk)||{};if(d[S.id]==null||score>d[S.id])d[S.id]=score;store(dk,d);var gp=guardarIntento({trayecto:S.t.id,practica:S.id,codigo_personal:S.per,puntaje:score,codigo:code,detalle:S.log});
+  var dk='hechas-'+S.t.id,d=store(dk)||{};if(d[S.id]==null||score>d[S.id])d[S.id]=score;store(dk,d);
+  var pend=store('pend-cfp')||{};pend[S.t.id+'|'+S.id]=d[S.id];store('pend-cfp',pend);
   $('#steps').innerHTML=p.missions.map(function(){return '<i class="done"></i>'}).join('');
-  var t=S.t.nombre.toUpperCase()+'\nPRÁCTICA '+S.id+' · '+p.title.toUpperCase()+'\nCódigo personal: '+S.per+'\nCódigo de práctica: '+code+'\nPuntaje: '+score+'/100\n';
-  p.missions.forEach(function(m,i){t+='Misión '+(i+1)+' ('+m.title+'): '+S.log[i]+'\n'});
-  app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('medal',score>=70?'green':'amber')+'</div><h1 style="text-align:center">'+(score>=70?'¡Práctica cumplida!':'¡Casi!')+'</h1><div class="big">'+score+' / 100</div>'+
-  '<p class="lead" style="text-align:center">'+(score>=70?'Muy bien. Ahora pasá a la Actividad '+S.id+'.':'Para la actividad necesitás 70 o más. Volvé a intentarlo: ya conocés las respuestas.')+'</p>'+
-  '<div class="card"><b>Paso 1 · Copiá tu resumen</b><p class="hint">Incluye tu código de práctica. Tocá el botón y se copia solo.</p><textarea class="sum" id="sm" readonly></textarea><button class="btn" id="cp">Copiar resumen</button><div class="hint" id="cpm" style="text-align:center;margin-top:6px"></div></div>'+
-  '<div class="card"><b>Paso 2 · Pegalo en la plataforma</b><p class="hint" style="margin-bottom:0">Entrá a la plataforma del CFP, abrí la <b>Actividad '+S.id+'</b> y pegalo en el cuadro de respuesta (mantené apretado y elegí <b>Pegar</b>, o Ctrl+V). Después respondé las preguntas de la actividad y entregá. <b>Si no lo pegás en la plataforma, el docente no lo recibe.</b></p></div>'+
-  '<div class="code">'+code+'</div><div class="hint" id="gs" style="text-align:center">Guardando tu intento…</div><button class="btn alt" onclick="startPractice(\''+S.t.id+'\','+S.id+')">Volver a intentar</button><button class="btn alt" onclick="location.hash=\'#/'+S.t.id+'\'">Volver a las prácticas del trayecto</button></section>';
-  $('#sm').value=t;gp.then(function(ok){var g=$('#gs');if(g)g.innerHTML=ok?'✓ Tu intento quedó registrado para el docente. Igual pegá el resumen en la actividad.':'No se pudo registrar el intento (¿sin internet?). Volvé a intentarlo más tarde o pegá el resumen en la actividad.'});$('#cp').onclick=function(){var ta=$('#sm');ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
-    if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(function(){msg(true)},function(){msg(ok)});else msg(ok)};
-  function msg(ok){$('#cpm').textContent=ok?'¡Copiado! Ahora andá a la plataforma y pegalo en la actividad.':'Seleccioná el texto y copialo a mano (mantené apretado en el celular).'}
+  var det=p.missions.map(function(m,i){return m.title+': '+S.log[i]});
+  var ok=score>=70;
+  app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('medal',ok?'green':'amber')+'</div><h1 style="text-align:center">'+(ok?'¡Práctica cumplida!':'¡Casi!')+'</h1><div class="big">'+score+' / 100</div>'+
+  '<p class="lead" style="text-align:center">'+(ok?'Muy bien.':'Para aprobar necesitás 70 o más. Volvé a intentarlo: ya conocés las respuestas, y queda tu mejor nota.')+'</p>'+
+  '<div class="fb info" id="gs" style="display:block;text-align:center">Guardando tu resultado…</div>'+
+  '<button class="btn alt" onclick="startPractice(\''+S.t.id+'\','+S.id+')">Volver a intentar</button><button class="btn alt" onclick="location.hash=\'#/'+S.t.id+'\'">Volver a las prácticas del trayecto</button>'+pieSesion()+'</section>';
+  var tid=S.t.id,pid=S.id;
+  guardarIntento({trayecto:tid,practica:pid,codigo_personal:S.per,puntaje:score,codigo:code,detalle:S.log}).then(function(){return notaEnCFP(tid,pid,d[pid],det)}).then(function(st){
+    var m=NOTA_MSG[st]||NOTA_MSG.error,g=$('#gs');if(g){g.className='fb '+m[0];g.textContent=m[1]}
+    if(st!=='error'&&st!=='sin_clase'){var pe=store('pend-cfp')||{};delete pe[tid+'|'+pid];store('pend-cfp',pe)}});
   window.scrollTo(0,0);}
+// Reintenta pasar a la plataforma del CFP las notas que quedaron pendientes (sin conexión o práctica todavía no publicada)
+function sincronizarPendientes(){if(!SES||!SES.perfil)return;var pe=store('pend-cfp')||{};Object.keys(pe).forEach(function(k){var x=k.split('|');
+  notaEnCFP(x[0],+x[1],pe[k],null).then(function(st){if(st!=='error'&&st!=='sin_clase'){var p2=store('pend-cfp')||{};delete p2[k];store('pend-cfp',p2)}})})}
 
 /* ---------------- DOCENTE (oculto: #/docente) ---------------- */
 var DOC={datos:null};
