@@ -14,7 +14,7 @@ var TONOS=['navy','teal','violet','coral','green','amber'];
 var TRAYECTOS={};var ORDEN=[];
 function registrarTrayecto(t){TRAYECTOS[t.id]=t;ORDEN.push(t.id)}
 function goHome(){location.hash='#/'}
-function render(){
+function render(){simLimpiar();
   var h=location.hash.replace(/^#\/?/,'');
   if(h==='docente'||h.indexOf('docente/')===0)return teacher();
   var parts=h.split('/');var t=TRAYECTOS[parts[0]];
@@ -84,7 +84,7 @@ function verRevision(tid,id){var p=TRAYECTOS[tid].practicas[id],rev=store('rev-'
 function htmlRevision(rev){if(!rev||!rev.length)return '<div class="fb ok" style="display:block"><b>¡No fallaste en nada!</b> Todo bien al primer intento.</div>';
   return '<div class="card"><b>Para repasar</b>'+rev.map(function(r){return '<div class="task" style="display:block"><span class="hint">'+esc(r.m)+'</span><br>'+r.t+(r.ok?'<br><b style="color:#277A52">Correcto: '+r.ok+'</b>':'')+(r.why?'<br><span class="hint">'+r.why+'</span>':'')+'</div>'}).join('')+'</div>'}
 function steps(){var h='';for(var i=0;i<S.p.missions.length;i++)h+='<i class="'+(i<S.mi?'done':(i===S.mi?'on':''))+'"></i>';$('#steps').innerHTML=h}
-function next(){S.mi++;steps();window.scrollTo(0,0);if(S.mi>=S.p.missions.length)return finish();var m=S.p.missions[S.mi];
+function next(){simLimpiar();S.mi++;steps();window.scrollTo(0,0);if(S.mi>=S.p.missions.length)return finish();var m=S.p.missions[S.mi];
   var wrap='<section class="screen"><span class="tag">Misión '+(S.mi+1)+' de '+S.p.missions.length+'</span><h2>'+esc(m.title)+'</h2><p class="lead">'+m.lead+'</p><div id="mz"></div><button class="btn" id="nx" style="display:none">'+(S.mi+1<S.p.missions.length?'Siguiente misión':'Ver mi resultado')+'</button></section>';
   app.innerHTML=wrap;$('#nx').onclick=next;TYPES[m.type](m,$('#mz'));}
 function done(pts,max,log){S.pts[S.mi]=pts;S.max[S.mi]=max;S.log[S.mi]=log;$('#nx').style.display='block';}
@@ -102,6 +102,41 @@ TYPES.quiz=function(m,z){var i=0,first,score=0,log=[];
       else{if(first)S.rev.push({m:m.title,t:(it.q||'').replace(/<[^>]+>/g,''),ok:it.opts[it.a].replace(/<br>/g,' ').replace(/<[^>]+>/g,''),why:it.why});b.className='wrong';b.disabled=true;first=false;f.className='fb no';f.innerHTML=(it.hint||'No es esa. Leé de nuevo y probá otra.');}}});
     $('#qn').onclick=function(){i++;if(i<m.items.length)show();else{z.innerHTML='<div class="fb ok">Terminaste: '+score+' de '+m.items.length+' al primer intento.</div>';done(score,m.items.length,'aciertos '+score+'/'+m.items.length+' ('+log.join(' ')+')')}};}
   show();};
+/* --- SIM (simulación interactiva en un iframe del mismo sitio; avisa el avance con postMessage) --- */
+var SIM_OFF=null;
+function simLimpiar(){if(SIM_OFF){SIM_OFF();SIM_OFF=null}document.body.classList.remove('ancho')}
+TYPES.sim=function(m,z){document.body.classList.add('ancho');
+  var EST={block:['ok','Frenado'],mitigate:['warn','Daño limitado'],hit:['bad','Comprometido']},total=m.ataques.length,vistos={},mejor=0,msgs=0,hecho=false,salteo=false;
+  z.innerHTML='<div class="card guia"><div class="counter">Cómo hacerla, paso a paso</div><div class="gpasos">'+m.guia.map(function(g,k){return '<div class="gpaso" id="gp'+k+'"><div class="gnum">'+(k+1)+'</div>'+ic(g.ic,g.tone)+'<div class="gtx"><b>'+g.t+'</b><span>'+g.d+'</span>'+(g.demo?'<div class="gdemo">'+g.demo+'</div>':'')+'</div><div class="gok">✓</div></div>'}).join('')+'</div></div>'+
+    '<div class="card simtrack"><div class="counter" id="sc">Ningún ataque probado todavía</div><div class="satk">'+m.ataques.map(function(a){return '<div class="sa" id="sa-'+a[0]+'"><b>'+a[1]+'</b><span class="dpill">Sin probar</span></div>'}).join('')+'</div>'+
+    '<div class="fb" id="f"></div><button class="btn alt" id="pi" style="display:none">¿Te trabaste? Ver una pista</button><button class="btn alt" id="sg" style="display:none">No me sale: seguir sin terminar</button></div>'+
+    '<iframe class="simf" id="simf" title="'+esc(m.title)+'" src="'+m.src+'"></iframe>'+
+    '<p class="hint" style="text-align:center">La simulación está arriba. Cuando frenes los '+total+' ataques, abajo aparece el botón para seguir.</p>';
+  var f=$('#simf'),fb=$('#f');
+  f.onload=function(){try{var d=f.contentDocument;d.documentElement.setAttribute('data-theme','light');
+    var aj=function(){f.style.height=Math.max(d.body.scrollHeight,d.body.offsetHeight)+8+'px'};aj();
+    if(window.ResizeObserver)new ResizeObserver(aj).observe(d.body)}catch(e){}};
+  function marca(k){var g=$('#gp'+k);if(g)g.classList.add('hecho')}
+  function onMsg(ev){if(ev.source!==f.contentWindow||ev.origin!==location.origin)return;var d=ev.data;if(!d||d.origen!==m.origen)return;
+    msgs++;marca(0);var r=d.resultados||{};
+    m.ataques.forEach(function(a){var c=$('#sa-'+a[0]),e=EST[r[a[0]]];if(r[a[0]])vistos[a[0]]=1;c.className='sa'+(e?' '+e[0]:'');c.querySelector('span').textContent=e?e[1]:'Sin probar'});
+    if(d.frenados>mejor)mejor=d.frenados;
+    $('#sc').textContent=d.frenados+' de '+total+' frenados con las medidas que tenés prendidas';
+    if(Object.keys(vistos).length>=total)marca(1);
+    if(d.completa){var n=(d.medidasActivas||[]).length;marca(2);
+      if(!hecho){hecho=true;if(salteo){S.rev.pop();salteo=false}
+        fb.className='fb ok';fb.innerHTML='<b>¡Frenaste los '+total+' ataques!</b> Lo lograste con <b>'+n+' de 6 medidas</b> prendidas. '+(n>3?'¿Hacían falta todas? Lo pensamos en la próxima misión.':'Esa es la menor cantidad posible: muy bien.');
+        $('#pi').style.display='none';$('#sg').style.display='none';
+        done(4,4,'frenó '+total+'/'+total+' con '+n+' medidas ('+(d.medidasActivas||[]).join(', ')+')');$('#nx').scrollIntoView({behavior:'smooth',block:'center'})}
+      return}
+    if(!hecho){if(msgs>=3)$('#pi').style.display='block';if(msgs>=6&&!salteo)$('#sg').style.display='block';
+      var malos=m.ataques.filter(function(a){return r[a[0]]&&r[a[0]]!=='block'});
+      fb.className='fb info';fb.innerHTML=malos.length?'<b>«'+malos[0][1]+'»</b> no quedó frenado. Mirá en «Qué pasó» dónde llegó, prendé la medida que protege ese equipo y probalo otra vez.':'Vas bien. Probá los ataques que faltan.'}}
+  window.addEventListener('message',onMsg);SIM_OFF=function(){window.removeEventListener('message',onMsg)};
+  $('#pi').onclick=function(){fb.className='fb info';fb.innerHTML='<b>Pista:</b> '+m.pista;$('#pi').style.display='none'};
+  $('#sg').onclick=function(){salteo=true;$('#sg').style.display='none';S.rev.push({m:m.title,t:'No llegaste a frenar los '+total+' ataques a la vez.',ok:m.solucion,why:''});
+    fb.className='fb no';fb.innerHTML='Seguís con <b>'+mejor+' de '+total+'</b> ataques frenados. Si querés, todavía podés intentarlo: si los frenás antes de seguir, cuenta completo.';
+    done(mejor,total,'frenó como máximo '+mejor+'/'+total+' (siguió sin terminar)')}};
 /* --- SORT --- */
 TYPES.sort=function(m,z){var sel=null,left=m.items.length,score=0,tried={};
   z.innerHTML='<div class="card"><div class="hint">Tocá una tarjeta y después la caja donde va.</div><div id="chips" style="margin-top:8px"></div><div class="bins" style="grid-template-columns:repeat('+Math.min(m.bins.length,3)+',1fr)">'+

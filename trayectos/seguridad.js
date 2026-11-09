@@ -247,6 +247,24 @@ var PR_SEG={
   {q:'Querés que solo tus amigos vean tus fotos de Instagram.',opts:['Pongo la cuenta privada','Borro todas las fotos','No se puede'],a:0,why:'Configuración › Privacidad de la cuenta › Cuenta privada.'}]}]},
 
 
+16:{mod:4,title:'La red de la oficina en 3D',icon:'network',tone:'navy',mins:40,cfp:'Actividad 16 · Mi plan de seguridad',
+ intro:'Juntamos todo lo del trayecto en una oficina entera, en 3D: sus equipos, sus puntos débiles y cuatro ataques reales. Tu misión: prender las medidas justas para <b>frenar los cuatro</b>. Conviene hacerla en una compu; en el celular también funciona.',
+ missions:[
+ {type:'sim',title:'Frená los cuatro ataques',origen:'red-oficina-3d',src:'simulaciones/red-oficina-3d.html',
+  lead:'Seguí los tres pasos. La simulación te muestra por dónde avanza cada ataque y qué medida lo frena. No hay apuro: podés probar todas las veces que quieras.',
+  ataques:[['phishing','Correo falso'],['ransom','Ransomware'],['wifi','Intruso en el Wi-Fi'],['scan','Escaneo desde Internet']],
+  guia:[
+   {ic:'eye',tone:'teal',t:'Mirá la red',d:'Girala arrastrando con el dedo o el mouse. Tocá un equipo para leer sus riesgos.',demo:'<span class="dbtn">Separar por capas</span><span class="dbtn">Vista inicial</span>'},
+   {ic:'bug',tone:'coral',t:'Probá los 4 ataques',d:'En «Probar un ataque», tocá cada uno y mirá hasta dónde llega.',demo:'<span class="dpill bad">Comprometido</span><span class="dpill ok">Frenado</span>'},
+   {ic:'shield',tone:'green',t:'Prendé medidas y repetí',d:'En «Medidas de protección», prendé o apagá. Volvé a probar hasta que los 4 digan «Frenado».',demo:'<span class="dsw"></span><span class="dsw off"></span>'}],
+  pista:'Dos medidas ya vienen prendidas. Prendé <b>«Equipos actualizados y con antivirus»</b> y volvé a probar los cuatro ataques, uno por uno.',
+  solucion:'Con firewall, Wi-Fi con WPA3 y equipos actualizados se frenan los cuatro.'},
+ {type:'quiz',title:'¿Hacían falta todas?',lead:'Ahora pensá en lo que viste en la simulación. Si dudás, volvé a probarlo: está en la misión anterior.',items:[
+  {q:'¿Cuál es la <b>menor</b> cantidad de medidas que frena los cuatro ataques?',opts:['Dos: firewall y Wi-Fi con WPA3','Tres: firewall, Wi-Fi con WPA3 y equipos actualizados','Las seis'],a:1,why:'El firewall frena el escaneo, el Wi-Fi con WPA3 frena al intruso y el antivirus actualizado frena el correo falso y el ransomware en la PC.',hint:'Con dos, el correo falso y el ransomware igual llegan a la PC.'},
+  {q:'Con tres alcanza en la simulación. ¿Por qué <b>igual</b> conviene prender las seis?',opts:['Porque ninguna medida es perfecta: si una falla, la siguiente frena o achica el daño','Porque con más medidas la red anda más rápido','No conviene: con tres alcanza'],a:0,why:'Se llama <b>defensa en capas</b>: un antivirus puede no reconocer un virus nuevo, y ahí te salva lo que viene después.'},
+  {q:'Alguien ya consiguió tu contraseña. ¿Qué medida lo frena igual?',opts:['El firewall','El segundo factor','El Wi-Fi con WPA3'],a:1,why:'Con la contraseña sola no alcanza: también necesita el código de tu celular.'},
+  {q:'Un ransomware cifró todo el servidor. ¿Qué te salva los archivos?',opts:['Una copia de respaldo desconectada','Apagar el router','El personal capacitado'],a:0,why:'Es tu plan de copias de esta clase: si la copia estaba desconectada, el ransomware no la alcanzó y se restaura.'}]}]},
+
 /* ================= MÓDULO V ================= */
 17:{mod:5,title:'No confíes en lo que escriben',icon:'form',tone:'green',mins:35,
  intro:'Todo programa recibe datos de las personas: un nombre, una edad, un precio. Si no los revisa, se rompe… o alguien lo engaña. Revisar los datos se llama validar.',

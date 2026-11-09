@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Red de oficina en 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: escena 3D a la izquierda como pieza principal, panel de trabajo a la derecha; en celular se apila. */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --stage: #f7f9fc;
+  --ink: #172033;
+  --muted: #5a6478;
+  --line: #d5dbe5;
+  --accent: #2456c9;
+  --l0: #7b8496;
+  --l1: #d9822b;
+  --l2: #1f8f86;
+  --l3: #5b55c9;
+  --l4: #b0417f;
+  --bad: #cf352e;
+  --ok: #1c8a50;
+  --warn: #b97c0c;
+  --floor: #e4e9f0;
+  --floor-line: #cdd5e0;
+  --dev: #c3ccd9;
+  --dev-dark: #2a3346;
+  --paper: #eef1f6;
+  --cable: #8b96a8;
+  --font-display: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121722; --surface: #1b2230; --stage: #161c28; --ink: #e8ecf3; --muted: #9aa5b8;
+    --line: #2e384a; --accent: #7aa2ff;
+    --l0: #8d97aa; --l1: #f0a04b; --l2: #4fc4ba; --l3: #938dff; --l4: #e07ab0;
+    --bad: #ff6b61; --ok: #4cd08a; --warn: #f0b84a;
+    --floor: #1d2533; --floor-line: #2c3649; --dev: #66738a; --dev-dark: #0d1119;
+    --paper: #a9b3c4; --cable: #5d6a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121722; --surface: #1b2230; --stage: #161c28; --ink: #e8ecf3; --muted: #9aa5b8;
+  --line: #2e384a; --accent: #7aa2ff;
+  --l0: #8d97aa; --l1: #f0a04b; --l2: #4fc4ba; --l3: #938dff; --l4: #e07ab0;
+  --bad: #ff6b61; --ok: #4cd08a; --warn: #f0b84a;
+  --floor: #1d2533; --floor-line: #2c3649; --dev: #66738a; --dev-dark: #0d1119;
+  --paper: #a9b3c4; --cable: #5d6a80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1240px; margin: 0 auto; padding: 24px 20px 40px; display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.12; margin: 0; text-wrap: balance; }
+.lede { margin: 0; max-width: 65ch; color: var(--muted); }
+.grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 20px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; line-height: 1.2; margin: 0; text-wrap: balance; }
+h3 { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.head-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Escena */
+.stage { position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+#scene { display: block; width: 100%; aspect-ratio: 4 / 3; max-height: 640px; touch-action: none; cursor: grab; outline-offset: -3px; }
+#scene:active { cursor: grabbing; }
+.tools { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 8px; flex-wrap: wrap; pointer-events: none; }
+.tools button { pointer-events: auto; }
+.tools .spacer { flex: 1; }
+.hint { position: absolute; left: 12px; bottom: 10px; right: 12px; font-size: 12px; color: var(--muted); pointer-events: none; }
+button { font: inherit; color: inherit; }
+.btn {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 7px 12px; font-size: 13px; font-weight: 500; cursor: pointer; min-height: 36px;
+}
+.btn:hover { border-color: var(--accent); }
+.btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.sq { min-width: 36px; padding: 7px 0; text-align: center; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Índice por capas */
+.layers { display: flex; flex-direction: column; gap: 8px; }
+.layer-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.layer-name { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; min-width: 148px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.chip {
+  background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 11px; font-size: 13px; cursor: pointer; min-height: 30px;
+}
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+
+/* Ficha del equipo */
+.tag { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.what { margin: 0; }
+.dato { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.two > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+ul.plain { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+ul.plain li { padding-left: 14px; position: relative; }
+ul.plain li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: var(--mark, var(--muted)); }
+.risk { --mark: var(--bad); }
+.prot { --mark: var(--ok); }
+
+/* Medidas */
+.defs { display: flex; flex-direction: column; gap: 2px; }
+.def { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.def:first-child { border-top: 0; }
+.def input {
+  appearance: none; -webkit-appearance: none; width: 40px; height: 22px; border-radius: 999px; margin: 0;
+  background: var(--line); position: relative; cursor: pointer; grid-row: span 2; transition: background .15s;
+}
+.def input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); transition: transform .15s; }
+.def input:checked { background: var(--ok); }
+.def input:checked::after { transform: translateX(18px); }
+.def b { font-weight: 600; font-size: 14px; }
+.def span { font-size: 12.5px; color: var(--muted); grid-column: 2; }
+
+/* Ataques */
+.atks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.atk {
+  background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 5px; min-height: 64px;
+}
+.atk:hover { border-color: var(--accent); }
+.atk[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.atk b { font-size: 14px; font-weight: 600; line-height: 1.25; }
+.pill { align-self: flex-start; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--line); color: var(--muted); }
+.pill.block { color: var(--ok); border-color: var(--ok); }
+.pill.mitigate { color: var(--warn); border-color: var(--warn); }
+.pill.hit { color: var(--bad); border-color: var(--bad); }
+ol.log { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+ol.log li { border-left: 3px solid var(--line); padding: 2px 0 2px 10px; }
+ol.log li b { font-weight: 600; }
+ol.log li.bad, ol.log li.hit { border-color: var(--bad); }
+ol.log li.block { border-color: var(--ok); }
+ol.log li.mitigate { border-color: var(--warn); }
+.empty { margin: 0; font-size: 14px; color: var(--muted); }
+.task { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 0; font-size: 14px; max-width: 65ch; }
+.task b { font-weight: 600; }
+@media (max-width: 900px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .wrap { padding: 16px 16px 32px; }
+  #scene { aspect-ratio: 1 / 1; }
+  .two, .atks { grid-template-columns: 1fr; }
+  .layer-name { min-width: 100%; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .def input, .def input::after { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Seguridad informática · material interactivo de prueba</div>
+    <h1>La red de una oficina, capa por capa</h1>
+    <p class="lede">Girá la red, separala por capas y tocá cada equipo para ver qué riesgos tiene. Después activá o desactivá medidas de protección y probá hasta dónde llega cada ataque.</p>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <div class="stage">
+        <canvas id="scene" tabindex="0" role="img" aria-label="Modelo 3D de la red de una oficina. Usá las flechas para girar y los botones de equipos de abajo para seleccionar."></canvas>
+        <div class="tools">
+          <button class="btn" id="btnExplode" type="button" aria-pressed="false">Separar por capas</button>
+          <button class="btn" id="btnReset" type="button">Vista inicial</button>
+          <span class="spacer"></span>
+          <button class="btn sq" id="btnOut" type="button" aria-label="Alejar">−</button>
+          <button class="btn sq" id="btnIn" type="button" aria-label="Acercar">+</button>
+        </div>
+        <div class="hint">Arrastrá para girar · rueda o pellizco para acercar · tocá un equipo para ver su ficha</div>
+      </div>
+      <section class="card" aria-labelledby="hLayers">
+        <h2 id="hLayers">Equipos por capa de defensa</h2>
+        <div class="layers" id="layers"></div>
+      </section>
+      <p class="task"><b>Para pensar en clase.</b> ¿Cuál es la menor cantidad de medidas que frena los cuatro ataques? Si con esas alcanza, ¿por qué igual conviene activar las seis?</p>
+    </div>
+
+    <div class="col">
+      <section class="card" id="info" aria-live="polite"></section>
+
+      <section class="card" aria-labelledby="hDefs">
+        <div class="head-row"><h2 id="hDefs">Medidas de protección</h2><span class="count" id="defCount"></span></div>
+        <div class="defs" id="defs"></div>
+      </section>
+
+      <section class="card" aria-labelledby="hAtk">
+        <div class="head-row"><h2 id="hAtk">Probar un ataque</h2><span class="count" id="atkCount"></span></div>
+        <div class="atks" id="atks"></div>
+        <h3>Qué pasó</h3>
+        <p class="empty" id="logEmpty">Elegí un ataque para ver su recorrido por la red.</p>
+        <ol class="log" id="log" aria-live="polite"></ol>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Contenido ---------- */
+  var LAYERS = [
+    { name: 'Exterior' },
+    { name: 'Perímetro' },
+    { name: 'Red interna' },
+    { name: 'Puestos de trabajo' },
+    { name: 'Datos' }
+  ];
+
+  var COMPS = [
+    { id: 'internet', name: 'Internet', layer: 0, pos: [-6.0, -2.6], kind: 'internet', defs: [],
+      what: 'La red pública. Todo lo que entra o sale de la oficina pasa por acá.',
+      dato: 'IP pública de ejemplo: 203.0.113.25',
+      risks: ['Programas automáticos buscan equipos expuestos las 24 horas.', 'Correos y sitios falsos llegan desde cualquier parte del mundo.'],
+      prot: ['No exponer servicios que no hagan falta.', 'Navegar siempre por HTTPS (puerto 443).'] },
+    { id: 'intruso', name: 'Celular desconocido', layer: 0, pos: [-5.6, 3.4], kind: 'phone', defs: [],
+      what: 'Alguien en la vereda, dentro del alcance del Wi-Fi de la oficina.',
+      dato: 'Fuera del edificio · sin cable',
+      risks: ['La señal inalámbrica no termina en la pared.', 'Si entra al Wi-Fi queda dentro de la red, como un equipo más.'],
+      prot: ['Clave de Wi-Fi larga, que no sea el nombre de la institución.', 'Red de invitados separada de la interna.'] },
+    { id: 'router', name: 'Router con firewall', layer: 1, pos: [-2.6, -2.6], kind: 'router', defs: ['fw'],
+      what: 'Une la oficina con Internet. El firewall decide qué conexiones entran.',
+      dato: 'Puerta de enlace 192.168.10.1',
+      risks: ['Clave de administración de fábrica (admin / admin).', 'Puertos abiertos hacia Internet, como el 3389 de escritorio remoto.', 'Firmware viejo, con fallas conocidas.'],
+      prot: ['Firewall activo: descarta lo que nadie pidió desde adentro.', 'Cambiar la clave de administración.', 'Actualizar el firmware.'] },
+    { id: 'switch', name: 'Switch', layer: 2, pos: [0.1, -1.2], kind: 'switch', defs: [],
+      what: 'Reparte la red cableada entre todos los equipos.',
+      dato: '24 bocas · 192.168.10.2',
+      risks: ['Bocas libres donde cualquiera enchufa un equipo.', 'Todos en la misma red: si cae uno, alcanza a los demás.'],
+      prot: ['Desactivar las bocas sin uso.', 'Separar redes (VLAN): administración, aulas, invitados.'] },
+    { id: 'ap', name: 'Punto de acceso Wi-Fi', layer: 2, pos: [0.3, 3.2], kind: 'ap', defs: ['wifi'],
+      what: 'Da red inalámbrica. La señal sale del edificio y llega a la vereda.',
+      dato: 'SSID: Oficina-Personal · Oficina-Invitados',
+      risks: ['Red abierta o con clave corta.', 'La misma clave para el personal y las visitas.', 'WPS activado.'],
+      prot: ['WPA3 (o WPA2) con clave larga.', 'Red de invitados separada.', 'Cambiar la clave cuando alguien deja la institución.'] },
+    { id: 'pc1', name: 'PC de Secretaría', layer: 3, pos: [-1.8, 1.4], kind: 'pc', defs: ['upd', 'cap'],
+      what: 'Puesto de trabajo con correo y acceso a los archivos compartidos.',
+      dato: '192.168.10.21',
+      risks: ['Abrir un adjunto o un enlace de un correo falso (phishing).', 'Sistema operativo sin actualizar.', 'Sesión abierta y sin bloqueo.'],
+      prot: ['Desconfiar de las urgencias y verificar por otro medio.', 'Actualizaciones automáticas y antivirus.', 'Trabajar con un usuario sin permisos de administrador.'] },
+    { id: 'pc2', name: 'PC de Preceptoría', layer: 3, pos: [2.4, 0.9], kind: 'pc', defs: ['upd'],
+      what: 'Puesto compartido por varias personas a lo largo del día.',
+      dato: '192.168.10.22',
+      risks: ['Pendrives de origen desconocido.', 'Programas bajados de sitios no oficiales.', 'Una sola cuenta para todos.'],
+      prot: ['Una cuenta por persona.', 'Actualizaciones automáticas y antivirus.', 'Bloquear la pantalla al levantarse (Win + L).'] },
+    { id: 'notebook', name: 'Notebook docente', layer: 3, pos: [2.6, 3.7], kind: 'notebook', defs: ['upd'],
+      what: 'Equipo personal conectado por Wi-Fi.',
+      dato: '192.168.10.57 (Wi-Fi)',
+      risks: ['También se conecta a redes públicas fuera de la institución.', 'Sin cifrado de disco: si se pierde, se pierden los datos.'],
+      prot: ['Cifrado de disco y clave de inicio.', 'Actualizaciones al día.'] },
+    { id: 'printer', name: 'Impresora de red', layer: 3, pos: [5.2, 2.6], kind: 'printer', defs: [],
+      what: 'Un equipo más de la red, casi siempre olvidado.',
+      dato: '192.168.10.40',
+      risks: ['Clave de fábrica en su panel web.', 'Guarda copia de lo que imprime y escanea.', 'Firmware que nunca se actualiza.'],
+      prot: ['Cambiar la clave de administración.', 'Actualizar el firmware.', 'Ponerla en una red separada.'] },
+    { id: 'server', name: 'Servidor de archivos', layer: 4, pos: [3.6, -2.8], kind: 'server', defs: ['mfa'],
+      what: 'Guarda los documentos compartidos: legajos, planillas, actas.',
+      dato: '192.168.10.10 · carpetas compartidas (puerto 445)',
+      risks: ['Contraseñas débiles o repetidas.', 'Acceso remoto abierto a Internet.', 'Todos con permiso sobre todas las carpetas.'],
+      prot: ['Contraseña fuerte y segundo factor (2FA).', 'Permisos mínimos por carpeta.', 'Acceso remoto solo por VPN.'] },
+    { id: 'backup', name: 'Copia de respaldo', layer: 4, pos: [5.5, -1.0], kind: 'backup', defs: ['bkp'],
+      what: 'Segunda copia de los datos, para recuperarlos si todo lo demás falla.',
+      dato: 'Disco externo · copia semanal',
+      risks: ['Un respaldo siempre conectado se cifra junto con el servidor.', 'Copias que nunca se probaron.', 'Una sola copia y en el mismo edificio.'],
+      prot: ['Regla 3-2-1: 3 copias, 2 soportes, 1 fuera del edificio.', 'Desconectar el disco al terminar la copia.', 'Probar una restauración cada tanto.'] }
+  ];
+
+  var LINKS = [
+    ['internet', 'router'], ['router', 'switch'], ['switch', 'server'], ['server', 'backup'],
+    ['switch', 'pc1'], ['switch', 'pc2'], ['switch', 'printer'], ['switch', 'ap'],
+    ['ap', 'notebook', true], ['ap', 'intruso', true]
+  ];
+
+  var DEFS = [
+    { id: 'fw', name: 'Firewall del router activo', help: 'Descarta conexiones que nadie pidió desde adentro.', on: true },
+    { id: 'wifi', name: 'Wi-Fi con WPA3 y clave larga', help: 'Más una red aparte para invitados.', on: true },
+    { id: 'upd', name: 'Equipos actualizados y con antivirus', help: 'Actualizaciones automáticas en todas las PC.', on: false },
+    { id: 'mfa', name: 'Segundo factor en el servidor', help: 'Contraseña fuerte más un código en el celular.', on: false },
+    { id: 'bkp', name: 'Copia de respaldo desconectada', help: 'Regla 3-2-1, con el disco fuera de la red.', on: false },
+    { id: 'cap', name: 'Personal capacitado', help: 'Reconoce un correo falso y avisa.', on: false }
+  ];
+
+  function S(t, x) { return { t: t, x: x }; }
+  var ATTACKS = [
+    { id: 'phishing', name: 'Correo falso (phishing)', path: ['internet', 'router', 'switch', 'pc1', 'server'],
+      steps: [
+        function () { return S('info', 'Sale un correo que imita a un proveedor conocido y pide abrir un adjunto.'); },
+        function () { return S('info', 'El firewall lo deja pasar: es correo, un tráfico permitido.'); },
+        function () { return S('info', 'Llega a la red interna.'); },
+        function (d) {
+          if (d.cap) return S('block', 'La persona nota el remitente raro, no abre el adjunto y avisa.');
+          if (d.upd) return S('block', 'Abre el adjunto, pero el antivirus actualizado lo detecta y lo frena.');
+          return S('bad', 'Abre el adjunto y escribe su usuario y contraseña en una página falsa.');
+        },
+        function (d) {
+          if (d.mfa) return S('block', 'El atacante tiene la contraseña, pero no el segundo factor. No entra.');
+          return S('hit', 'Entra con la contraseña robada y copia los legajos.');
+        }
+      ] },
+    { id: 'ransom', name: 'Ransomware', path: ['internet', 'router', 'switch', 'pc2', 'server', 'backup'],
+      steps: [
+        function () { return S('info', 'Alguien baja un instalador desde un sitio no oficial.'); },
+        function () { return S('info', 'El firewall no lo frena: la descarga se pidió desde adentro.'); },
+        function () { return S('info', 'Llega a la red interna.'); },
+        function (d) {
+          if (d.upd) return S('block', 'El antivirus actualizado lo reconoce y lo elimina antes de que se ejecute.');
+          return S('bad', 'Se ejecuta y empieza a cifrar los archivos de la PC.');
+        },
+        function () { return S('bad', 'Por las carpetas compartidas cifra también el servidor.'); },
+        function (d) {
+          if (d.bkp) return S('mitigate', 'La copia estaba desconectada: se restaura y se pierde, como mucho, una semana de trabajo.');
+          return S('hit', 'No hay copia fuera de la red. Los archivos se pierden.');
+        }
+      ] },
+    { id: 'wifi', name: 'Intruso en el Wi-Fi', path: ['intruso', 'ap', 'switch', 'printer', 'server'],
+      steps: [
+        function () { return S('info', 'Desde la vereda busca redes inalámbricas al alcance.'); },
+        function (d) {
+          if (d.wifi) return S('block', 'La clave es larga y la red usa WPA3. No logra adivinarla.');
+          return S('bad', 'La clave era corta: la adivina en minutos y queda dentro de la red.');
+        },
+        function () { return S('bad', 'Ya ve a todos los equipos de la oficina.'); },
+        function () { return S('bad', 'Entra al panel de la impresora con la clave de fábrica y ve los documentos escaneados.'); },
+        function (d) {
+          if (d.mfa) return S('mitigate', 'El servidor le pide un segundo factor y no entra, pero la impresora ya quedó expuesta.');
+          return S('hit', 'Prueba contraseñas comunes y entra a las carpetas compartidas.');
+        }
+      ] },
+    { id: 'scan', name: 'Escaneo desde Internet', path: ['internet', 'router', 'switch', 'server'],
+      steps: [
+        function () { return S('info', 'Un programa automático recorre direcciones buscando el puerto 3389 abierto.'); },
+        function (d) {
+          if (d.fw) return S('block', 'El firewall descarta la conexión: nadie de adentro la pidió.');
+          return S('bad', 'Sin firewall, el acceso remoto queda a la vista.');
+        },
+        function () { return S('bad', 'Atraviesa la red interna hasta el servidor.'); },
+        function (d) {
+          if (d.mfa) return S('block', 'Encuentra el acceso remoto, pero sin el segundo factor no pasa.');
+          return S('hit', 'Prueba miles de contraseñas hasta acertar y toma control del servidor.');
+        }
+      ] }
+  ];
+  var OUTCOME = { block: 'Frenado', mitigate: 'Daño limitado', hit: 'Comprometido' };
+
+  /* ---------- Estado ---------- */
+  var byId = {};
+  COMPS.forEach(function (c) { byId[c.id] = c; });
+  var defOn = {};
+  DEFS.forEach(function (d) { defOn[d.id] = d.on; });
+  var HOME = { yaw: 0.55, pitch: 0.62, dist: 21 };
+  var st = {
+    yaw: HOME.yaw, pitch: HOME.pitch, dist: HOME.dist,
+    e: 0, eTarget: 0, selected: 'router',
+    marks: {}, hot: {}, results: {}, run: null, packet: null, pulse: 0
+  };
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var STEP = 1.75;
+  var FLOOR = { x0: -3.8, x1: 6.7, z0: -4.2, z1: 4.9 };
+
+  /* ---------- Geometría ---------- */
+  function box(cx, cy, cz, sx, sy, sz, col, ghost) {
+    var x0 = cx - sx / 2, x1 = cx + sx / 2, y0 = cy - sy / 2, y1 = cy + sy / 2, z0 = cz - sz / 2, z1 = cz + sz / 2;
+    return { col: col, ghost: ghost || null,
+      v: [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]],
+      f: [
+        { i: [4, 5, 6, 7], n: [0, 0, 1] }, { i: [1, 0, 3, 2], n: [0, 0, -1] },
+        { i: [5, 1, 2, 6], n: [1, 0, 0] }, { i: [0, 4, 7, 3], n: [-1, 0, 0] },
+        { i: [7, 6, 2, 3], n: [0, 1, 0] }, { i: [0, 1, 5, 4], n: [0, -1, 0] }
+      ] };
+  }
+  function prism(cx, y0, cz, r, h, n, col) {
+    var v = [], f = [], k, a, top = [];
+    for (k = 0; k < n; k++) { a = k / n * Math.PI * 2; v.push([cx + r * Math.cos(a), y0, cz + r * Math.sin(a)]); }
+    for (k = 0; k < n; k++) { a = k / n * Math.PI * 2; v.push([cx + r * Math.cos(a), y0 + h, cz + r * Math.sin(a)]); top.push(n + k); }
+    for (k = 0; k < n; k++) {
+      var k2 = (k + 1) % n, am = (k + 0.5) / n * Math.PI * 2;
+      f.push({ i: [k, k2, n + k2, n + k], n: [Math.cos(am), 0, Math.sin(am)] });
+    }
+    f.push({ i: top, n: [0, 1, 0] });
+    return { col: col, ghost: null, v: v, f: f };
+  }
+  function sphere(cx, cy, cz, r, col) {
+    var nb = 6, ns = 12, v = [], f = [], b, s;
+    for (b = 0; b <= nb; b++) {
+      var la = -Math.PI / 2 + b / nb * Math.PI;
+      for (s = 0; s < ns; s++) {
+        var lo = s / ns * Math.PI * 2;
+        v.push([cx + r * Math.cos(la) * Math.cos(lo), cy + r * Math.sin(la), cz + r * Math.cos(la) * Math.sin(lo)]);
+      }
+    }
+    for (b = 0; b < nb; b++) for (s = 0; s < ns; s++) {
+      var s2 = (s + 1) % ns, idx = [b * ns + s, b * ns + s2, (b + 1) * ns + s2, (b + 1) * ns + s];
+      var mx = 0, my = 0, mz = 0;
+      idx.forEach(function (q) { mx += v[q][0]; my += v[q][1]; mz += v[q][2]; });
+      var nx = mx / 4 - cx, ny = my / 4 - cy, nz = mz / 4 - cz, l = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+      f.push({ i: idx, n: [nx / l, ny / l, nz / l] });
+    }
+    return { col: col, ghost: null, v: v, f: f };
+  }
+
+  function partsFor(kind) {
+    var p = [], i;
+    switch (kind) {
+      case 'internet':
+        p.push(prism(0, 0, 0, 0.07, 0.6, 6, 'dev'));
+        p.push(sphere(0, 1.35, 0, 0.85, 'net'));
+        break;
+      case 'phone':
+        p.push(box(0, 0.06, 0, 0.55, 0.1, 0.34, 'dev'));
+        p.push(box(0, 0.52, 0, 0.42, 0.82, 0.07, 'dark'));
+        p.push(box(0, 0.52, 0.04, 0.34, 0.68, 0.012, 'badscreen'));
+        break;
+      case 'router':
+        p.push(box(0.1, 0.2, 0, 1.05, 0.26, 0.7, 'dev'));
+        p.push(box(-0.3, 0.62, -0.26, 0.06, 0.6, 0.06, 'dark'));
+        p.push(box(0.5, 0.62, -0.26, 0.06, 0.6, 0.06, 'dark'));
+        for (i = 0; i < 3; i++) p.push(box(-0.2 + i * 0.16, 0.2, 0.355, 0.07, 0.05, 0.012, 'ok'));
+        p.push(box(-0.72, 0.5, 0, 0.12, 0.94, 1.45, 'layer', 'fw'));
+        break;
+      case 'switch':
+        p.push(box(0, 0.16, 0, 1.45, 0.22, 0.62, 'dev'));
+        for (i = 0; i < 6; i++) p.push(box(-0.5 + i * 0.2, 0.16, 0.315, 0.12, 0.09, 0.012, 'dark'));
+        break;
+      case 'ap':
+        p.push(prism(0, 0, 0, 0.055, 1.5, 6, 'dev'));
+        p.push(prism(0, 1.5, 0, 0.44, 0.12, 14, 'paper'));
+        p.push(box(0, 1.635, 0, 0.12, 0.03, 0.12, 'screen'));
+        break;
+      case 'pc':
+        p.push(box(0.62, 0.36, -0.1, 0.3, 0.72, 0.62, 'dev'));
+        p.push(box(-0.18, 0.03, -0.15, 0.45, 0.06, 0.3, 'dev'));
+        p.push(box(-0.18, 0.22, -0.2, 0.08, 0.36, 0.08, 'dev'));
+        p.push(box(-0.18, 0.68, -0.2, 1.0, 0.62, 0.07, 'dark'));
+        p.push(box(-0.18, 0.68, -0.16, 0.88, 0.5, 0.012, 'screen'));
+        p.push(box(-0.18, 0.03, 0.38, 0.7, 0.05, 0.24, 'paper'));
+        break;
+      case 'notebook':
+        p.push(box(0, 0.04, 0.1, 0.88, 0.06, 0.6, 'dev'));
+        p.push(box(0, 0.36, -0.2, 0.88, 0.58, 0.05, 'dark'));
+        p.push(box(0, 0.36, -0.17, 0.78, 0.48, 0.012, 'screen'));
+        break;
+      case 'printer':
+        p.push(box(0, 0.25, 0, 1.0, 0.46, 0.72, 'paper'));
+        p.push(box(0, 0.52, -0.06, 0.7, 0.08, 0.45, 'dev'));
+        p.push(box(0, 0.2, 0.47, 0.5, 0.02, 0.3, 'white'));
+        p.push(box(0.32, 0.5, 0.28, 0.2, 0.04, 0.1, 'dark'));
+        break;
+      case 'server':
+        p.push(box(0, 0.95, 0, 0.8, 1.9, 0.9, 'dev'));
+        for (i = 0; i < 5; i++) p.push(box(0, 0.32 + i * 0.32, 0.455, 0.62, 0.16, 0.012, 'dark'));
+        p.push(box(0.28, 1.78, 0.455, 0.07, 0.06, 0.012, 'ok'));
+        break;
+      case 'backup':
+        p.push(box(0, 0.4, 0, 0.7, 0.8, 0.6, 'dev', 'bkp'));
+        p.push(box(0, 0.26, 0.305, 0.5, 0.14, 0.012, 'dark', 'bkp'));
+        p.push(box(0, 0.52, 0.305, 0.5, 0.14, 0.012, 'dark', 'bkp'));
+        break;
+    }
+    return p;
+  }
+
+  COMPS.forEach(function (c) {
+    var ox = c.pos[0], oz = c.pos[1];
+    c.padSize = c.kind === 'router' ? 2.0 : 1.7;
+    c.pad = box(0, 0.03, 0, c.padSize, 0.06, c.padSize, 'layer');
+    c.parts = partsFor(c.kind);
+    var top = 0;
+    [c.pad].concat(c.parts).forEach(function (part) {
+      part.v.forEach(function (q) { q[0] += ox; q[2] += oz; if (q[1] > top) top = q[1]; });
+      var sx = 0, sy = 0, sz = 0;
+      part.v.forEach(function (q) { sx += q[0]; sy += q[1]; sz += q[2]; });
+      part.c = [sx / part.v.length, sy / part.v.length, sz / part.v.length];
+    });
+    c.top = top;
+  });
+
+  /* ---------- Paleta ---------- */
+  var P = {};
+  function readPalette() {
+    var cs = getComputedStyle(document.documentElement);
+    function g(n) { return cs.getPropertyValue(n).trim(); }
+    P = {
+      stage: g('--stage'), surface: g('--surface'), ink: g('--ink'), muted: g('--muted'), line: g('--line'),
+      accent: g('--accent'), bad: g('--bad'), ok: g('--ok'), warn: g('--warn'),
+      floor: g('--floor'), floorLine: g('--floor-line'), dev: g('--dev'), dark: g('--dev-dark'),
+      paper: g('--paper'), cable: g('--cable'),
+      l: [g('--l0'), g('--l1'), g('--l2'), g('--l3'), g('--l4')],
+      body: g('--font-body')
+    };
+    rgbCache = {};
+  }
+  var rgbCache = {};
+  function rgb(hex) {
+    if (rgbCache[hex]) return rgbCache[hex];
+    var h = hex.replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    return (rgbCache[hex] = [(n >> 16) & 255, (n >> 8) & 255, n & 255]);
+  }
+  function shade(hex, k, a) {
+    var c = rgb(hex);
+    function ch(v) { return Math.max(0, Math.min(255, Math.round(v * k))); }
+    return 'rgba(' + ch(c[0]) + ',' + ch(c[1]) + ',' + ch(c[2]) + ',' + (a == null ? 1 : a) + ')';
+  }
+  function colorOf(key, comp) {
+    switch (key) {
+      case 'dev': return P.dev;
+      case 'dark': return P.dark;
+      case 'paper': return P.paper;
+      case 'white': return '#ffffff';
+      case 'screen': return P.accent;
+      case 'badscreen': return P.bad;
+      case 'net': return P.accent;
+      case 'ok': return P.ok;
+      case 'layer': return P.l[comp.layer];
+    }
+    return P.dev;
+  }
+
+  /* ---------- Cámara y proyección ---------- */
+  var canvas = document.getElementById('scene');
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0, DPR = 1;
+  var cam = { p: [0, 0, 0], r: [1, 0, 0], u: [0, 1, 0], f: [0, 0, 1], F: 600 };
+  var LIGHT = (function () { var v = [-0.42, 0.82, 0.48], l = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]); return [v[0] / l, v[1] / l, v[2] / l]; })();
+
+  function lift(layer) { return st.e * layer * STEP; }
+  function setCamera() {
+    var ty = 0.2 + st.e * 3.0, tx = 0.5, tz = 0.5;
+    var d = st.dist * (1 + st.e * 0.42);
+    var cp = Math.cos(st.pitch), sp = Math.sin(st.pitch);
+    cam.p = [tx + d * cp * Math.sin(st.yaw), ty + d * sp, tz + d * cp * Math.cos(st.yaw)];
+    var f = [tx - cam.p[0], ty - cam.p[1], tz - cam.p[2]], fl = Math.sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
+    f = [f[0] / fl, f[1] / fl, f[2] / fl];
+    var r = [-f[2], 0, f[0]], rl = Math.sqrt(r[0] * r[0] + r[2] * r[2]) || 1;
+    r = [r[0] / rl, 0, r[2] / rl];
+    var u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
+    cam.f = f; cam.r = r; cam.u = u;
+    cam.F = 0.98 * Math.min(W, H * 1.4);
+  }
+  function proj(x, y, z) {
+    var dx = x - cam.p[0], dy = y - cam.p[1], dz = z - cam.p[2];
+    var zz = dx * cam.f[0] + dy * cam.f[1] + dz * cam.f[2];
+    if (zz < 0.2) zz = 0.2;
+    var xx = dx * cam.r[0] + dy * cam.r[1] + dz * cam.r[2];
+    var yy = dx * cam.u[0] + dy * cam.u[1] + dz * cam.u[2];
+    return [W / 2 + xx * cam.F / zz, H / 2 - yy * cam.F / zz, zz];
+  }
+  function anchor(id, h) {
+    var c = byId[id];
+    return [c.pos[0], lift(c.layer) + (h == null ? 0.07 : h), c.pos[1]];
+  }
+
+  /* ---------- Dibujo ---------- */
+  var hits = [];
+  function poly(pts) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+  }
+  function drawPart(part, comp, isPad) {
+    var ly = lift(comp.layer);
+    var ghost = part.ghost && !defOn[part.ghost];
+    var base = colorOf(part.col, comp);
+    var sel = comp.id === st.selected;
+    var pv = part.v.map(function (q) { return proj(q[0], q[1] + ly, q[2]); });
+    for (var k = 0; k < part.f.length; k++) {
+      var face = part.f[k], n = face.n, q0 = part.v[face.i[0]];
+      var vis = n[0] * (cam.p[0] - q0[0]) + n[1] * (cam.p[1] - q0[1] - ly) + n[2] * (cam.p[2] - q0[2]);
+      if (vis <= 0) continue;
+      var pts = face.i.map(function (ix) { return pv[ix]; });
+      var kk = 0.6 + 0.46 * Math.max(0, n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]);
+      if (sel && !isPad) kk += 0.08;
+      poly(pts);
+      if (ghost) {
+        ctx.fillStyle = shade(base, kk, 0.14); ctx.fill();
+        ctx.setLineDash([4, 4]); ctx.strokeStyle = shade(P.muted, 1, 0.8); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+      } else {
+        var a = isPad ? 0.9 : 1;
+        ctx.fillStyle = shade(base, kk, a); ctx.fill();
+        ctx.strokeStyle = shade(base, kk * 0.8, a); ctx.lineWidth = 1; ctx.stroke();
+      }
+      hits.push({ pts: pts, id: comp.id });
+    }
+  }
+  function ring(comp, color, width, rad, dash) {
+    var ly = lift(comp.layer) + 0.07, n = 28, pts = [];
+    for (var k = 0; k < n; k++) {
+      var a = k / n * Math.PI * 2;
+      pts.push(proj(comp.pos[0] + rad * Math.cos(a), ly, comp.pos[1] + rad * Math.sin(a)));
+    }
+    poly(pts);
+    if (dash) ctx.setLineDash(dash);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  var MARK_COLOR = { info: 'muted', bad: 'bad', hit: 'bad', block: 'ok', mitigate: 'warn' };
+  function drawPadAndRings(c) {
+    drawPart(c.pad, c, true);
+    var m = st.marks[c.id];
+    if (m) {
+      var col = P[MARK_COLOR[m]];
+      ring(c, col, m === 'info' ? 2 : 3.5, c.padSize * 0.74);
+      if (m === 'hit' || m === 'block' || m === 'mitigate') ring(c, shade(col, 1, 0.45), 2, c.padSize * (0.86 + 0.1 * st.pulse));
+    }
+    if (c.id === st.selected) ring(c, P.accent, 2, c.padSize * 0.66, [5, 4]);
+  }
+  function drawLink(L) {
+    var a = anchor(L[0]), b = anchor(L[1]);
+    var pa = proj(a[0], a[1], a[2]), pb = proj(b[0], b[1], b[2]);
+    var hot = st.hot[L[0] + '>' + L[1]] || st.hot[L[1] + '>' + L[0]];
+    ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]);
+    ctx.strokeStyle = hot ? P.bad : P.cable;
+    ctx.lineWidth = hot ? 3 : (L[2] ? 1.5 : 2.2);
+    if (L[2]) ctx.setLineDash([3, 6]);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  function drawFloor() {
+    var c = [[FLOOR.x0, FLOOR.z0], [FLOOR.x1, FLOOR.z0], [FLOOR.x1, FLOOR.z1], [FLOOR.x0, FLOOR.z1]].map(function (q) { return proj(q[0], 0, q[1]); });
+    poly(c); ctx.fillStyle = P.floor; ctx.fill();
+    ctx.strokeStyle = P.floorLine; ctx.lineWidth = 1;
+    var x, z, a, b;
+    ctx.beginPath();
+    for (x = Math.ceil(FLOOR.x0); x <= FLOOR.x1; x++) { a = proj(x, 0, FLOOR.z0); b = proj(x, 0, FLOOR.z1); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); }
+    for (z = Math.ceil(FLOOR.z0); z <= FLOOR.z1; z++) { a = proj(FLOOR.x0, 0, z); b = proj(FLOOR.x1, 0, z); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); }
+    ctx.stroke();
+    poly(c); ctx.lineWidth = 2.5; ctx.strokeStyle = shade(P.muted, 1, 0.55); ctx.stroke();
+    var t = proj(FLOOR.x0 + 0.25, 0, FLOOR.z1 - 0.3);
+    ctx.font = '600 11px ' + P.body; ctx.fillStyle = P.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('OFICINA', t[0], t[1]);
+    var s = proj(-5.2, 0, 5.4);
+    ctx.textAlign = 'center'; ctx.fillText('CALLE', s[0], s[1]);
+  }
+  function drawPlate(layer) {
+    var y = lift(layer) - 0.02;
+    var c = [[FLOOR.x0, FLOOR.z0], [FLOOR.x1, FLOOR.z0], [FLOOR.x1, FLOOR.z1], [FLOOR.x0, FLOOR.z1]].map(function (q) { return proj(q[0], y, q[1]); });
+    poly(c);
+    ctx.fillStyle = shade(P.l[layer], 1, 0.1 * st.e); ctx.fill();
+    ctx.strokeStyle = shade(P.l[layer], 1, 0.7 * st.e); ctx.lineWidth = 1.5; ctx.stroke();
+    var t = proj(FLOOR.x0 + 0.25, y, FLOOR.z1 - 0.3);
+    ctx.font = '600 12px ' + P.body; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = shade(P.l[layer], 1, st.e);
+    ctx.fillText(layer + ' · ' + LAYERS[layer].name.toUpperCase(), t[0], t[1]);
+  }
+  function depthOf(part, comp) {
+    var c = part.c, ly = lift(comp.layer);
+    return (c[0] - cam.p[0]) * cam.f[0] + (c[1] + ly - cam.p[1]) * cam.f[1] + (c[2] - cam.p[2]) * cam.f[2];
+  }
+  function drawGroup(comps) {
+    comps.forEach(drawPadAndRings);
+    var items = [];
+    comps.forEach(function (c) { c.parts.forEach(function (p) { items.push({ p: p, c: c, d: depthOf(p, c) }); }); });
+    items.sort(function (a, b) { return b.d - a.d; });
+    items.forEach(function (it) { drawPart(it.p, it.c, false); });
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+  }
+  function drawLabels() {
+    var labs = COMPS.map(function (c) {
+      var p = proj(c.pos[0], lift(c.layer) + c.top + 0.42, c.pos[1]);
+      return { c: c, x: p[0], y: p[1], z: p[2] };
+    }).sort(function (a, b) { return b.z - a.z; });
+    ctx.font = '600 12px ' + P.body; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    labs.forEach(function (L) {
+      L.warn = L.c.defs.some(function (d) { return !defOn[d]; });
+      L.tw = ctx.measureText(L.c.name).width; L.w = L.tw + 28 + (L.warn ? 16 : 0); L.h = 22;
+      L.bx = Math.max(4, Math.min(W - L.w - 4, L.x - L.w / 2)); L.by = L.y - L.h;
+    });
+    var placed = [];
+    labs.slice().sort(function (a, b) { return b.by - a.by; }).forEach(function (L) {
+      for (var t = 0; t < 8; t++) {
+        var clash = placed.some(function (q) { return L.bx < q.bx + q.w + 4 && L.bx + L.w + 4 > q.bx && L.by < q.by + q.h + 3 && L.by + L.h + 3 > q.by; });
+        if (!clash) break;
+        L.by -= 13;
+      }
+      L.by = Math.max(52, L.by);
+      placed.push(L);
+    });
+    labs.forEach(function (L) {
+      var c = L.c, sel = c.id === st.selected, warn = L.warn, tw = L.tw, w = L.w, h = L.h, x = L.bx, y = L.by;
+      if (L.y - (y + h) > 6) {
+        ctx.beginPath(); ctx.moveTo(L.x, y + h); ctx.lineTo(L.x, L.y + 4);
+        ctx.strokeStyle = P.muted; ctx.lineWidth = 1; ctx.stroke();
+      }
+      roundRect(x, y, w, h, 11);
+      ctx.fillStyle = sel ? P.accent : shade(P.surface, 1, 0.94); ctx.fill();
+      var m = st.marks[c.id];
+      ctx.strokeStyle = sel ? P.accent : (m && m !== 'info' ? P[MARK_COLOR[m]] : P.line);
+      ctx.lineWidth = m && m !== 'info' && !sel ? 2 : 1; ctx.stroke();
+      ctx.fillStyle = P.l[c.layer];
+      ctx.beginPath(); ctx.arc(x + 11, y + h / 2, 4, 0, Math.PI * 2); ctx.fill();
+      if (sel) { ctx.strokeStyle = P.surface; ctx.lineWidth = 1; ctx.stroke(); }
+      ctx.fillStyle = sel ? P.surface : P.ink;
+      ctx.fillText(c.name, x + 20, y + h / 2 + 0.5);
+      if (warn) {
+        var wx = x + 20 + tw + 12;
+        ctx.fillStyle = P.warn; ctx.beginPath(); ctx.arc(wx, y + h / 2, 6.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = P.surface; ctx.font = '700 10px ' + P.body; ctx.textAlign = 'center';
+        ctx.fillText('!', wx, y + h / 2 + 0.5);
+        ctx.font = '600 12px ' + P.body; ctx.textAlign = 'left';
+      }
+      hits.push({ pts: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]], id: c.id });
+    });
+  }
+  function drawPacket() {
+    if (!st.packet) return;
+    var p = proj(st.packet[0], st.packet[1], st.packet[2]);
+    var g = ctx.createRadialGradient(p[0], p[1], 1, p[0], p[1], 16);
+    g.addColorStop(0, shade(P.bad, 1, 0.55)); g.addColorStop(1, shade(P.bad, 1, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p[0], p[1], 16, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = P.bad; ctx.beginPath(); ctx.arc(p[0], p[1], 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = P.surface; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+  function draw() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = P.stage; ctx.fillRect(0, 0, W, H);
+    ctx.lineJoin = 'round';
+    setCamera();
+    hits = [];
+    drawFloor();
+    if (st.e < 0.02) {
+      LINKS.forEach(drawLink);
+      drawGroup(COMPS);
+    } else {
+      for (var L = 0; L < LAYERS.length; L++) {
+        if (L > 0) drawPlate(L);
+        LINKS.forEach(function (k) { if (Math.max(byId[k[0]].layer, byId[k[1]].layer) === L) drawLink(k); });
+        drawGroup(COMPS.filter(function (c) { return c.layer === L; }));
+      }
+    }
+    drawPacket();
+    drawLabels();
+  }
+
+  /* ---------- Animación ---------- */
+  var raf = 0;
+  function invalidate() { if (!raf) raf = requestAnimationFrame(frame); }
+  function ease(u) { return u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; }
+  function frame(ts) {
+    raf = 0;
+    var again = false;
+    if (st.e !== st.eTarget) {
+      var dir = st.eTarget > st.e ? 1 : -1;
+      st.e += dir * 0.06;
+      if ((dir > 0 && st.e >= st.eTarget) || (dir < 0 && st.e <= st.eTarget)) st.e = st.eTarget; else again = true;
+    }
+    var r = st.run;
+    if (r) {
+      again = true;
+      if (r.phase === 'travel') {
+        var u = (ts - r.t0) / 850;
+        if (u >= 1) { u = 1; arrive(r, ts); }
+        if (st.run) {
+          var a = anchor(r.atk.path[r.seg], 0.6), b = anchor(r.atk.path[r.seg + 1], 0.6), k = ease(u);
+          st.packet = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k + Math.sin(Math.PI * k) * 0.7, a[2] + (b[2] - a[2]) * k];
+        }
+      } else if (ts - r.t0 > 520) {
+        r.seg++; r.phase = 'travel'; r.t0 = ts;
+      }
+    }
+    if (st.pulseUntil && ts < st.pulseUntil) { st.pulse = 0.5 + 0.5 * Math.sin(ts / 140); again = true; } else st.pulse = 0;
+    draw();
+    if (again) invalidate();
+  }
+
+  /* ---------- Ataques ---------- */
+  var elLog = document.getElementById('log'), elLogEmpty = document.getElementById('logEmpty');
+  function logStep(atk, i, res) {
+    var li = document.createElement('li');
+    li.className = res.t;
+    var b = document.createElement('b');
+    b.textContent = byId[atk.path[i]].name + '. ';
+    li.appendChild(b);
+    li.appendChild(document.createTextNode(res.x));
+    elLog.appendChild(li);
+  }
+  function applyStep(atk, i) {
+    var res = atk.steps[i](defOn);
+    st.marks[atk.path[i]] = res.t;
+    if (i > 0) st.hot[atk.path[i - 1] + '>' + atk.path[i]] = true;
+    logStep(atk, i, res);
+    return res;
+  }
+  function isEnd(t) { return t === 'block' || t === 'mitigate' || t === 'hit'; }
+  function finish(atk, t) {
+    st.results[atk.id] = t;
+    st.run = null;
+    st.pulseUntil = reduceMotion ? 0 : performance.now() + 2600;
+    renderAttacks();
+    notifyHost();
+  }
+  /* Avisa a la página que lo contiene (si está embebido en un iframe) cómo va la práctica. */
+  function notifyHost() {
+    try {
+      if (window.parent === window) return;
+      var res = {}, frenados = 0, probados = 0;
+      ATTACKS.forEach(function (a) { var r = st.results[a.id]; if (r) { probados++; res[a.id] = r; if (r === 'block') frenados++; } });
+      window.parent.postMessage({
+        origen: 'red-oficina-3d', probados: probados, frenados: frenados, total: ATTACKS.length,
+        medidasActivas: DEFS.filter(function (d) { return defOn[d.id]; }).map(function (d) { return d.id; }),
+        resultados: res, completa: frenados === ATTACKS.length
+      }, '*');
+    } catch (e) {}
+  }
+  function arrive(r, ts) {
+    var i = r.seg + 1, res = applyStep(r.atk, i);
+    if (isEnd(res.t)) { st.packet = anchor(r.atk.path[i], 0.6); finish(r.atk, res.t); }
+    else { r.phase = 'pause'; r.t0 = ts; }
+  }
+  function clearRun() {
+    st.run = null; st.packet = null; st.marks = {}; st.hot = {}; st.pulseUntil = 0;
+    elLog.textContent = '';
+    elLogEmpty.hidden = false;
+  }
+  function runAttack(atk) {
+    clearRun();
+    st.active = atk.id;
+    elLogEmpty.hidden = true;
+    applyStep(atk, 0);
+    if (reduceMotion) {
+      var t = 'info';
+      for (var i = 1; i < atk.steps.length; i++) { t = applyStep(atk, i).t; if (isEnd(t)) break; }
+      st.packet = null;
+      finish(atk, t);
+    } else {
+      st.packet = anchor(atk.path[0], 0.6);
+      st.run = { atk: atk, seg: 0, phase: 'travel', t0: performance.now() };
+      renderAttacks();
+    }
+    invalidate();
+  }
+
+  /* ---------- Panel ---------- */
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function listOf(items, cls) {
+    var ul = el('ul', 'plain ' + cls);
+    items.forEach(function (t) { ul.appendChild(el('li', null, t)); });
+    return ul;
+  }
+  function renderInfo() {
+    var c = byId[st.selected], box = document.getElementById('info');
+    box.textContent = '';
+    var tag = el('div', 'tag');
+    var sw = el('span', 'sw'); sw.style.background = 'var(--l' + c.layer + ')';
+    tag.appendChild(sw); tag.appendChild(document.createTextNode('Capa ' + c.layer + ' · ' + LAYERS[c.layer].name));
+    box.appendChild(tag);
+    box.appendChild(el('h2', null, c.name));
+    box.appendChild(el('p', 'what', c.what));
+    box.appendChild(el('div', 'dato', c.dato));
+    var two = el('div', 'two'), a = el('div'), b = el('div');
+    a.appendChild(el('h3', null, 'Riesgos típicos')); a.appendChild(listOf(c.risks, 'risk'));
+    b.appendChild(el('h3', null, 'Cómo se protege')); b.appendChild(listOf(c.prot, 'prot'));
+    two.appendChild(a); two.appendChild(b); box.appendChild(two);
+  }
+  function renderLayers() {
+    var box = document.getElementById('layers');
+    box.textContent = '';
+    LAYERS.forEach(function (L, i) {
+      var row = el('div', 'layer-row'), nm = el('span', 'layer-name');
+      var sw = el('span', 'sw'); sw.style.background = 'var(--l' + i + ')';
+      nm.appendChild(sw); nm.appendChild(document.createTextNode(i + ' · ' + L.name));
+      row.appendChild(nm);
+      COMPS.filter(function (c) { return c.layer === i; }).forEach(function (c) {
+        var b = el('button', 'chip', c.name);
+        b.type = 'button'; b.dataset.comp = c.id;
+        b.setAttribute('aria-pressed', c.id === st.selected ? 'true' : 'false');
+        b.addEventListener('click', function () { select(c.id); });
+        row.appendChild(b);
+      });
+      box.appendChild(row);
+    });
+  }
+  function select(id) {
+    st.selected = id;
+    renderInfo();
+    Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (b) {
+      b.setAttribute('aria-pressed', b.dataset.comp === id ? 'true' : 'false');
+    });
+    invalidate();
+  }
+  function renderDefs() {
+    var box = document.getElementById('defs');
+    box.textContent = '';
+    DEFS.forEach(function (d) {
+      var lab = el('label', 'def'), inp = el('input');
+      inp.type = 'checkbox'; inp.id = 'def-' + d.id; inp.checked = defOn[d.id];
+      inp.addEventListener('change', function () {
+        defOn[d.id] = inp.checked;
+        st.results = {}; st.active = null;
+        clearRun(); countDefs(); renderAttacks(); invalidate();
+      });
+      lab.appendChild(inp); lab.appendChild(el('b', null, d.name)); lab.appendChild(el('span', null, d.help));
+      box.appendChild(lab);
+    });
+    countDefs();
+  }
+  function countDefs() {
+    var n = DEFS.filter(function (d) { return defOn[d.id]; }).length;
+    document.getElementById('defCount').textContent = n + ' de ' + DEFS.length + ' activas';
+  }
+  function renderAttacks() {
+    var box = document.getElementById('atks');
+    box.textContent = '';
+    var stopped = 0, tried = 0;
+    ATTACKS.forEach(function (a) {
+      var r = st.results[a.id];
+      if (r) tried++;
+      if (r === 'block') stopped++;
+      var b = el('button', 'atk');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', st.active === a.id ? 'true' : 'false');
+      b.appendChild(el('b', null, a.name));
+      var running = st.run && st.run.atk.id === a.id;
+      b.appendChild(el('span', 'pill ' + (r || ''), running ? 'En curso…' : (r ? OUTCOME[r] : 'Sin probar')));
+      b.addEventListener('click', function () { runAttack(a); });
+      box.appendChild(b);
+    });
+    document.getElementById('atkCount').textContent = tried ? stopped + ' de ' + ATTACKS.length + ' frenados' : 'Ninguno probado todavía';
+  }
+
+  /* ---------- Interacción con la escena ---------- */
+  function inPoly(pts, x, y) {
+    var inside = false;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      var xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+  function hitAt(ev) {
+    var r = canvas.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+    for (var i = hits.length - 1; i >= 0; i--) if (inPoly(hits[i].pts, x, y)) return hits[i].id;
+    return null;
+  }
+  function clampView() {
+    st.pitch = Math.max(0.2, Math.min(1.38, st.pitch));
+    st.dist = Math.max(8, Math.min(34, st.dist));
+  }
+  var ptrs = {}, moved = false, pinch = 0;
+  canvas.addEventListener('pointerdown', function (ev) {
+    canvas.setPointerCapture(ev.pointerId);
+    ptrs[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    moved = false;
+    var ids = Object.keys(ptrs);
+    if (ids.length === 2) pinch = Math.hypot(ptrs[ids[0]].x - ptrs[ids[1]].x, ptrs[ids[0]].y - ptrs[ids[1]].y);
+  });
+  canvas.addEventListener('pointermove', function (ev) {
+    var p = ptrs[ev.pointerId];
+    if (!p) { canvas.style.cursor = hitAt(ev) ? 'pointer' : 'grab'; return; }
+    var dx = ev.clientX - p.x, dy = ev.clientY - p.y;
+    var ids = Object.keys(ptrs);
+    if (ids.length === 1) {
+      if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+      if (moved) { st.yaw -= dx * 0.008; st.pitch += dy * 0.006; p.x = ev.clientX; p.y = ev.clientY; }
+    } else if (ids.length === 2) {
+      p.x = ev.clientX; p.y = ev.clientY; moved = true;
+      var d = Math.hypot(ptrs[ids[0]].x - ptrs[ids[1]].x, ptrs[ids[0]].y - ptrs[ids[1]].y);
+      if (pinch > 0 && d > 0) st.dist *= pinch / d;
+      pinch = d;
+    }
+    clampView(); invalidate();
+  });
+  function endPtr(ev) {
+    if (!ptrs[ev.pointerId]) return;
+    var single = Object.keys(ptrs).length === 1;
+    delete ptrs[ev.pointerId];
+    if (single && !moved && ev.type === 'pointerup') { var id = hitAt(ev); if (id) select(id); }
+  }
+  canvas.addEventListener('pointerup', endPtr);
+  canvas.addEventListener('pointercancel', endPtr);
+  canvas.addEventListener('wheel', function (ev) {
+    ev.preventDefault();
+    st.dist *= Math.exp(ev.deltaY * 0.0012);
+    clampView(); invalidate();
+  }, { passive: false });
+  canvas.addEventListener('keydown', function (ev) {
+    var k = ev.key, used = true;
+    if (k === 'ArrowLeft') st.yaw -= 0.12;
+    else if (k === 'ArrowRight') st.yaw += 0.12;
+    else if (k === 'ArrowUp') st.pitch += 0.08;
+    else if (k === 'ArrowDown') st.pitch -= 0.08;
+    else if (k === '+' || k === '=') st.dist *= 0.9;
+    else if (k === '-') st.dist *= 1.1;
+    else used = false;
+    if (used) { ev.preventDefault(); clampView(); invalidate(); }
+  });
+  var btnExplode = document.getElementById('btnExplode');
+  btnExplode.addEventListener('click', function () {
+    st.eTarget = st.eTarget ? 0 : 1;
+    if (reduceMotion) st.e = st.eTarget;
+    btnExplode.setAttribute('aria-pressed', st.eTarget ? 'true' : 'false');
+    btnExplode.textContent = st.eTarget ? 'Volver a unir' : 'Separar por capas';
+    invalidate();
+  });
+  document.getElementById('btnReset').addEventListener('click', function () {
+    st.yaw = HOME.yaw; st.pitch = HOME.pitch; st.dist = HOME.dist; invalidate();
+  });
+  document.getElementById('btnIn').addEventListener('click', function () { st.dist *= 0.85; clampView(); invalidate(); });
+  document.getElementById('btnOut').addEventListener('click', function () { st.dist *= 1.18; clampView(); invalidate(); });
+
+  /* ---------- Tamaño y tema ---------- */
+  function resize() {
+    var r = canvas.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    draw();
+  }
+  function retheme() { readPalette(); invalidate(); }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas); else window.addEventListener('resize', resize);
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', retheme); else if (mq.addListener) mq.addListener(retheme);
+  }
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(invalidate);
+
+  readPalette();
+  renderLayers(); renderInfo(); renderDefs(); renderAttacks();
+  resize();
+})();
+</script>
+</body>
+</html>
