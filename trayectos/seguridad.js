@@ -50,7 +50,7 @@ var PR_SEG={
   {q:'Prestarle la contraseña a un amigo de confianza no tiene riesgo.',opts:['Verdadero','Falso'],a:1,why:'Una contraseña compartida deja de ser tuya: no sabés dónde la anota ni a quién se la pasa.'}]},
  CFGS.cuenta]},
 
-3:{mod:1,title:'Copias que salvan',icon:'cloud',tone:'teal',mins:30,cfp:'Actividad 3 · Mi copia, comprobada',
+3:{mod:1,title:'Copias que salvan',icon:'cloud',tone:'teal',mins:40,cfp:'Actividad 3 · Mi copia, comprobada',
  intro:'Marta perdió tres años de trabajo por no tener copias. Vamos a aprender a hacerlas bien, y sobre todo a comprobar que sirven.',
  missions:[
  {type:'quiz',row:true,title:'¿Es una copia de seguridad?',lead:'Una copia de seguridad es una copia guardada <b>en otro lugar</b>. ¿Estos casos cuentan?',items:[
@@ -63,6 +63,7 @@ var PR_SEG={
   items:[['La carpeta de fotos de la compu',0],['Un pendrive',1],['Un disco externo',1],['La nube de su cuenta de correo',2],['Una copia en la casa de su hermana',2]],end:'Con una copia en cada columna, Marta cumple la regla 3-2-1.'},
  {type:'order',title:'Copiar y comprobar',lead:'Ordená los pasos para hacer una copia y comprobar que funciona.',steps:['Elegir los archivos importantes','Copiarlos (Ctrl+C) sin moverlos','Pegarlos (Ctrl+V) en el pendrive o la nube','Desde la copia, traer un archivo a una carpeta de prueba','Abrir ese archivo y verificar que se ve bien'],
   why:'El último paso es el que casi nadie hace: una copia que nunca probaste es una esperanza, no una copia.'},
+ CFGS.copia,
  {type:'list',title:'Tu plan de copias',lead:'Anotá de 3 a 5 cosas tuyas que necesitan copia. Elegí dónde y cada cuánto la vas a hacer.',
   sug:['Fotos del celular','Documentos de trabajo','Trabajos del curso','Contactos','Conversaciones de WhatsApp'],
   qs:[['¿Dónde vas a guardar la copia?',['Pendrive o disco','Nube','Otra compu'],'dónde:'],['¿Cada cuánto?',['Cada semana','Cada mes','Cada vez que cambia'],'frecuencia:']]}]},

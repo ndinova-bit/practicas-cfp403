@@ -345,3 +345,141 @@ bitwarden: {
     { t: 'Al menos 2 con contraseña <b>generada</b>', ok: function (s) { return s.items.filter(function (x) { return x.g; }).length >= 2; }, ruta: 'En «Nuevo elemento», tocá «Generar contraseña» antes de Guardar.' }]
 }
 };
+
+/* ------------------------------------------------- Clase 3 · Copias de seguridad */
+CFGS.copia = {
+  type: 'cfg', title: 'Hacé una copia y comprobala',
+  lead: 'Elegí el camino que más se parece a lo que vas a hacer en tu casa. En los tres hay que <b>copiar</b> (no mover) y después <b>recuperar</b> un archivo para comprobar que la copia sirve.',
+  fin: 'Copia hecha <b>y comprobada</b>. Ahora hacelo con tus archivos de verdad y contalo en la Actividad 3.',
+  variantes: [
+    { t: 'Compu → pendrive', ic: 'usb', tone: 'amber', device: 'win', start: 'esc',
+      intro: 'Enchufaste el pendrive en la compu de Marta. Copiá sus documentos y comprobá la copia.',
+      state: { docs: ['Recetas.docx', 'Precios.xlsx', 'Foto_local.jpg', 'Cuentas_marzo.pdf', 'Proveedores.docx'], usb: [], prueba: [], clip: [], clipDe: '', cut: false, sel: '', donde: 'docs', abierto: false },
+      screens: {
+        esc: { title: 'Escritorio', grid: true, items: [{ nav: 'exp', t: 'Explorador de archivos', ic: 'folder', tone: 'amber' }, { nav: 'nada', t: 'Navegador', ic: 'globe', tone: 'teal' }] },
+        nada: { title: 'App', items: [{ info: 'Esta app no sirve para esto. Tocá <b>‹</b> y abrí el <b>Explorador de archivos</b>.' }] },
+        exp: { title: 'Este equipo', win: 'Explorador de archivos', items: [
+          { list: function (s) { return [
+            { t: 'Documentos', d: s.docs.length + ' archivos · los originales', ic: 'folder', tone: 'amber', nav: 'docs' },
+            { t: 'Pendrive (E:)', d: s.usb.length ? s.usb.length + ' archivos' : 'Vacío', ic: 'usb', tone: 'teal', nav: 'usb' },
+            { t: 'Escritorio › Prueba de recuperación', d: 'Carpeta nueva para comprobar', ic: 'folder', tone: 'green', nav: 'prueba' }]; } }] },
+        docs: { title: 'Documentos', win: 'Explorador de archivos', items: [
+          { act: 'all', t: 'Seleccionar todo y Copiar (Ctrl+A, Ctrl+C)', run: function (s) { s.clip = s.docs.slice(); s.clipDe = 'docs'; s.cut = false; return 'Copiaste ' + s.clip.length + ' archivos. Ahora andá al <b>pendrive</b> y pegá.'; } },
+          { list: function (s) { return s.docs.map(function (f) { return { t: f, ic: 'file', tone: 'navy', nav: 'arch', set: { sel: f, donde: 'docs' } }; }); } }] },
+        arch: { title: 'Archivo', win: 'Explorador de archivos', items: [
+          { info: function (s) { return '<b>' + esc(s.sel) + '</b>'; } },
+          { act: 'c', t: 'Copiar (Ctrl+C)', run: function (s) { s.clip = [s.sel]; s.clipDe = s.donde; s.cut = false; return 'Copiado. Andá a la carpeta de destino y tocá <b>Pegar</b>.'; } },
+          { act: 'x', t: 'Cortar (Ctrl+X)', alt: true, run: function (s) { s.clip = [s.sel]; s.clipDe = s.donde; s.cut = true; return '<b>Ojo:</b> cortar <b>mueve</b> el archivo. Al pegar, desaparece de acá. Para una copia, usá <b>Copiar</b>.'; } },
+          { act: 'a', t: 'Abrir', alt: true, run: function (s) {
+            if (s.donde === 'prueba') { var x = s.prueba.find(function (p) { return p.n === s.sel; }); if (x && x.de === 'usb') { s.abierto = true; return 'Se abrió bien: <b>la copia funciona</b> ✔'; } }
+            return 'Se abrió.'; } }] },
+        usb: { title: 'Pendrive (E:)', win: 'Explorador de archivos', items: [
+          { act: 'p', t: 'Pegar (Ctrl+V)', run: function (s) {
+            if (!s.clip.length) return { err: 'Todavía no copiaste nada. Andá a Documentos y copiá.' };
+            if (s.clipDe === 'usb') return { err: 'Esos archivos ya están en el pendrive.' };
+            s.clip.forEach(function (f) { if (s.usb.indexOf(f) < 0) s.usb.push(f); });
+            if (s.cut) { s.docs = s.docs.filter(function (f) { return s.clip.indexOf(f) < 0; }); s.cut = false; s.clip = []; return 'Pegado… pero como <b>cortaste</b>, el original ya no está en Documentos.'; }
+            return 'Pegado: ' + s.usb.length + ' archivos en el pendrive.'; } },
+          { list: function (s) { return s.usb.map(function (f) { return { t: f, ic: 'file', tone: 'teal', nav: 'arch', set: { sel: f, donde: 'usb' } }; }); } }] },
+        prueba: { title: 'Prueba de recuperación', win: 'Explorador de archivos', items: [
+          { info: 'Una carpeta nueva y vacía. Traé acá <b>un archivo desde el pendrive</b> y abrilo.' },
+          { act: 'p', t: 'Pegar (Ctrl+V)', run: function (s) {
+            if (!s.clip.length) return { err: 'Primero copiá un archivo desde el pendrive.' };
+            s.clip.forEach(function (f) { if (!s.prueba.some(function (p) { return p.n === f; })) s.prueba.push({ n: f, de: s.clipDe }); });
+            return s.clipDe === 'usb' ? 'Pegado desde el pendrive. Ahora <b>abrilo</b>.' : 'Pegado, pero vino de Documentos: para comprobar la copia, tiene que venir <b>del pendrive</b>.'; } },
+          { list: function (s) { return s.prueba.map(function (p) { return { t: p.n, d: p.de === 'usb' ? 'Recuperado del pendrive' : 'Vino de Documentos', ic: 'file', tone: 'green', nav: 'arch', set: { sel: p.n, donde: 'prueba' } }; }); } }] }
+      },
+      goals: [
+        { t: 'Copiaste <b>3 o más</b> archivos al pendrive', ok: function (s) { return s.usb.length >= 3; }, ruta: 'Explorador › Documentos › «Seleccionar todo y Copiar» › Este equipo › Pendrive › Pegar.' },
+        { t: 'Los <b>originales</b> siguen en Documentos (copiar, no mover)', ok: function (s) { return s.docs.length === 5 && s.usb.length > 0; }, ruta: 'Usá Copiar, no Cortar. Si ya cortaste, tocá «Empezar de nuevo».' },
+        { t: 'Trajiste un archivo <b>del pendrive</b> a la carpeta de prueba', ok: function (s) { return s.prueba.some(function (p) { return p.de === 'usb'; }); }, ruta: 'Pendrive › tocá un archivo › Copiar › Este equipo › Prueba de recuperación › Pegar.' },
+        { t: 'Lo <b>abriste</b> y se ve bien', ok: function (s) { return s.abierto; }, ruta: 'En Prueba de recuperación, tocá el archivo › Abrir.' }] },
+
+    { t: 'Celular Android → nube de Google', ic: 'phone', tone: 'green', device: 'android', start: 'ini',
+      intro: 'Con la cuenta de Google del celular tenés <b>15 GB gratis</b>. Activá las dos copias y comprobá que una foto vuelve.',
+      state: { fotos: false, uno: false, hecha: false, rest: false, cal: 'Ahorro de almacenamiento' },
+      screens: {
+        ini: { title: 'Inicio', grid: true, items: [{ nav: 'fotos', t: 'Google Fotos', ic: 'eye', tone: 'amber' }, { nav: 'aj', t: 'Ajustes', ic: 'gear', tone: 'navy' }, { nav: 'nada', t: 'Cámara', ic: 'eye', tone: 'violet' }] },
+        nada: { title: 'App', items: [{ info: 'Esta app no sirve para esto. Tocá <b>‹</b>.' }] },
+        fotos: { title: 'Google Fotos', items: [
+          { info: function (s) { return s.fotos ? '☁️ <b>Copia de seguridad activada</b> · 1.240 fotos guardadas en tu cuenta' : '⚠️ <b>Copia de seguridad desactivada:</b> tus fotos están solo en este celular.'; } },
+          { nav: 'fperfil', t: 'Tu perfil', d: 'La foto de arriba a la derecha', ic: 'user', tone: 'violet' },
+          { nav: 'nube', t: 'Biblioteca › Fotos en la nube', ic: 'cloud', tone: 'teal' }] },
+        fperfil: { title: 'Tu perfil', items: [{ nav: 'fconf', t: 'Configuración de Fotos', ic: 'gear' }, { nav: 'o1', t: 'Administrar tu cuenta', ic: 'user', tone: 'violet' }] },
+        o1: CFG_OTRA('Tu cuenta'),
+        fconf: { title: 'Configuración de Fotos', items: [{ nav: 'fcop', t: 'Copia de seguridad', ic: 'cloud', tone: 'teal' }, { nav: 'o2', t: 'Notificaciones', ic: 'chat' }] },
+        o2: CFG_OTRA('Notificaciones'),
+        fcop: { title: 'Copia de seguridad', items: [
+          { tog: 'fotos', t: 'Copia de seguridad', d: 'Guarda tus fotos y videos en tu cuenta de Google' },
+          { sel: 'cal', t: 'Calidad', opts: ['Ahorro de almacenamiento', 'Calidad original'] },
+          { info: '«Ahorro de almacenamiento» ocupa menos lugar: alcanza y sobra para la mayoría.' }] },
+        nube: { title: 'Fotos en la nube', items: [
+          { info: function (s) { return s.fotos ? 'Estas fotos están guardadas en tu cuenta: aunque pierdas el celular, siguen acá.' : 'Todavía no hay nada en la nube: primero activá la copia de seguridad.'; } },
+          { list: function (s) { return s.fotos ? [{ t: 'Torta de cumpleaños.jpg', d: '☁️ En la nube', ic: 'eye', tone: 'amber', nav: 'foto' }, { t: 'Vidriera del local.jpg', d: '☁️ En la nube', ic: 'eye', tone: 'amber', nav: 'foto' }] : []; } }] },
+        foto: { title: 'Foto', items: [{ info: '🖼️ (vista previa)' },
+          { act: 'd', t: 'Descargar al celular', run: function (s) { s.rest = true; return 'Descargada en la carpeta <b>Descargas</b>. Se abre bien: <b>la copia funciona</b> ✔'; } }] },
+        aj: { title: 'Ajustes', items: [{ nav: 'o3', t: 'Conexiones', ic: 'wifi', tone: 'teal' }, { nav: 'goo', t: 'Google', d: 'Servicios de Google', ic: 'user', tone: 'amber' }, { nav: 'o4', t: 'Batería', ic: 'plug', tone: 'green' }] },
+        o3: CFG_OTRA('Conexiones'), o4: CFG_OTRA('Batería'),
+        goo: { title: 'Google', items: [{ nav: 'gcop', t: 'Copia de seguridad', ic: 'cloud', tone: 'teal' }, { nav: 'o5', t: 'Encontrar mi dispositivo', ic: 'search', tone: 'green' }] },
+        o5: CFG_OTRA('Encontrar mi dispositivo'),
+        gcop: { title: 'Copia de seguridad', items: [
+          { tog: 'uno', t: 'Copia de seguridad de Google One', d: 'Contactos, apps, mensajes, llamadas y ajustes' },
+          { act: 'h', t: 'Crear copia ahora', run: function (s) { if (!s.uno) return { err: 'Primero activá «Copia de seguridad de Google One».' }; s.hecha = true; return 'Copia terminada: contactos, apps, mensajes y ajustes guardados en tu cuenta.'; } },
+          { info: 'WhatsApp tiene su propia copia: WhatsApp › Ajustes › Chats › Copia de seguridad.' }] }
+      },
+      goals: [
+        { t: 'Copia de <b>fotos</b> activada', ok: function (s) { return s.fotos; }, ruta: 'Google Fotos › tu perfil › Configuración de Fotos › Copia de seguridad › activala.' },
+        { t: 'Copia del <b>celular</b> hecha (contactos, apps, mensajes)', ok: function (s) { return s.hecha; }, ruta: 'Ajustes › Google › Copia de seguridad › activá Google One › Crear copia ahora.' },
+        { t: '<b>Comprobaste:</b> trajiste una foto desde la nube', ok: function (s) { return s.rest; }, ruta: 'Google Fotos › Biblioteca › Fotos en la nube › tocá una foto › Descargar.' }] },
+
+    { t: 'Compu → Google Drive', ic: 'cloud', tone: 'teal', device: 'win', start: 'esc',
+      intro: 'Subí la carpeta de recetas de Marta a su Google Drive (gratis con su cuenta de Gmail) y comprobá que un archivo vuelve.',
+      state: { sub: false, desc: false, abierto: false, carpeta: '— elegí una carpeta —' },
+      screens: {
+        esc: { title: 'Escritorio', grid: true, items: [{ nav: 'drive', t: 'Navegador', ic: 'globe', tone: 'teal' }, { nav: 'nada', t: 'Explorador', ic: 'folder', tone: 'amber' }] },
+        nada: { title: 'App', items: [{ info: 'Para esto se usa el <b>navegador</b>. Tocá <b>‹</b>.' }] },
+        drive: { title: 'Mi unidad', win: 'Navegador · drive.google.com', items: [
+          { info: function (s) { return s.sub ? 'Tu Drive: <b>15 GB gratis</b>, usados 0,3 GB.' : 'Tu Drive está vacío. 15 GB gratis.'; } },
+          { act: 'n', t: '+ Nuevo', run: function () { return { nav: 'nuevo' }; } },
+          { list: function (s) { return s.sub ? [{ t: 'Recetas', d: '12 archivos · subida hoy', ic: 'folder', tone: 'amber', nav: 'carp' }] : []; } }] },
+        nuevo: { title: 'Nuevo', win: 'Navegador · drive.google.com', items: [
+          { nav: 'o1', t: 'Carpeta nueva', ic: 'folder' },
+          { act: 'a', t: 'Subir archivo', alt: true, run: function () { return { err: 'Sirve para un archivo suelto. Para toda una carpeta, usá «Subir carpeta».' }; } },
+          { act: 'c', t: 'Subir carpeta', run: function () { return { nav: 'elegir' }; } }] },
+        o1: CFG_OTRA('Carpeta nueva'),
+        elegir: { title: 'Elegí la carpeta para subir', win: 'Abrir', items: [
+          { sel: 'carpeta', t: 'Carpeta', opts: ['— elegí una carpeta —', 'Documentos › Recetas', 'Descargas', 'Escritorio'] },
+          { act: 's', t: 'Subir', run: function (s) { if (s.carpeta !== 'Documentos › Recetas') return { err: 'Elegí la carpeta de las recetas de Marta (Documentos › Recetas).' }; s.sub = true; return { nav: 'drive', msg: 'Subiendo 12 archivos… <b>¡Listo!</b> La carpeta Recetas ya está en tu Drive.' }; } }] },
+        carp: { title: 'Recetas', win: 'Navegador · drive.google.com', items: [
+          { list: function () { return ['Medialunas.docx', 'Pan dulce.docx', 'Facturas.docx'].map(function (f) { return { t: f, ic: 'file', tone: 'navy', nav: 'archd' }; }); } }] },
+        archd: { title: 'Archivo en Drive', win: 'Navegador · drive.google.com', items: [
+          { info: 'Medialunas.docx · guardado en la nube' },
+          { act: 'd', t: 'Descargar', run: function (s) { s.desc = true; return 'Descargado en la carpeta <b>Descargas</b> de la compu.'; } },
+          { act: 'o', t: 'Abrir lo que descargaste', alt: true, run: function (s) { if (!s.desc) return { err: 'Primero tocá «Descargar».' }; s.abierto = true; return 'Se abrió bien: <b>la copia funciona</b> ✔'; } }] }
+      },
+      goals: [
+        { t: 'La carpeta <b>Recetas</b> subida a Drive', ok: function (s) { return s.sub; }, ruta: 'Navegador (drive.google.com) › + Nuevo › Subir carpeta › Documentos › Recetas › Subir.' },
+        { t: '<b>Descargaste</b> un archivo desde Drive', ok: function (s) { return s.desc; }, ruta: 'Mi unidad › Recetas › tocá un archivo › Descargar.' },
+        { t: 'Lo <b>abriste</b> y se ve bien', ok: function (s) { return s.abierto; }, ruta: 'En el mismo archivo: «Abrir lo que descargaste».' }] },
+
+    { t: 'iPhone → iCloud', ic: 'phone', tone: 'navy', device: 'iphone', start: 'ini',
+      intro: 'Con tu cuenta de Apple tenés <b>5 GB gratis</b> en iCloud. Si se te llenan, guardá las fotos en Google Fotos (también existe para iPhone).',
+      state: { fot: false, icb: false, hecha: false },
+      screens: {
+        ini: { title: 'Inicio', grid: true, items: [{ nav: 'aj', t: 'Ajustes', ic: 'gear', tone: 'navy' }, { nav: 'nada', t: 'Fotos', ic: 'eye', tone: 'amber' }, { nav: 'nada', t: 'Mail', ic: 'mail', tone: 'teal' }] },
+        nada: { title: 'App', items: [{ info: 'Las copias se activan desde <b>Ajustes</b>. Tocá <b>‹</b>.' }] },
+        aj: { title: 'Ajustes', items: [{ nav: 'cta', t: 'Ana López', d: 'Cuenta de Apple, iCloud y más', ic: 'user', tone: 'violet' }, { nav: 'o1', t: 'Wi-Fi', ic: 'wifi', tone: 'teal' }, { nav: 'o2', t: 'General', ic: 'gear' }] },
+        o1: CFG_OTRA('Wi-Fi'), o2: CFG_OTRA('General'),
+        cta: { title: 'Cuenta de Apple', items: [{ nav: 'icl', t: 'iCloud', d: '5 GB gratis', ic: 'cloud', tone: 'teal' }, { nav: 'o3', t: 'Buscar', ic: 'search', tone: 'green' }] },
+        o3: CFG_OTRA('Buscar'),
+        icl: { title: 'iCloud', items: [{ nav: 'fot', t: 'Fotos', ic: 'eye', tone: 'amber' }, { nav: 'icb', t: 'Copia en iCloud', ic: 'cloud', tone: 'teal' }] },
+        fot: { title: 'Fotos', items: [{ tog: 'fot', t: 'Sincronizar este iPhone', d: 'Guarda tus fotos en iCloud' }] },
+        icb: { title: 'Copia en iCloud', items: [
+          { tog: 'icb', t: 'Hacer copia de este iPhone', d: 'Se hace sola cuando está cargando, bloqueado y con Wi-Fi' },
+          { act: 'h', t: 'Realizar copia ahora', run: function (s) { if (!s.icb) return { err: 'Primero activá «Hacer copia de este iPhone».' }; s.hecha = true; return 'Copia terminada. Última copia: hoy.'; } }] }
+      },
+      goals: [
+        { t: '<b>Fotos de iCloud</b> activadas', ok: function (s) { return s.fot; }, ruta: 'Ajustes › tu nombre › iCloud › Fotos › Sincronizar este iPhone.' },
+        { t: '<b>Copia en iCloud</b> activada', ok: function (s) { return s.icb; }, ruta: 'Ajustes › tu nombre › iCloud › Copia en iCloud.' },
+        { t: 'Copia <b>hecha ahora</b>', ok: function (s) { return s.hecha; }, ruta: 'En Copia en iCloud: «Realizar copia ahora».' }] }]
+};
