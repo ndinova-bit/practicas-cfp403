@@ -57,3 +57,79 @@ function notaEnCFP(trayecto, practica, puntaje, detalle) {
   }).catch(function () { return 'error'; });
 }
 function leerIntentos() { return funcion('listar').then(function (j) { return j.intentos || []; }); }
+
+/* ---------- Qué prácticas están habilitadas (igual que en la plataforma del CFP) ----------
+   Una práctica se habilita si en la plataforma del CFP existe la clase «Práctica N»,
+   ya llegó su fecha de publicación y su módulo no está bloqueado por correlatividad
+   (las reglas son las de la plataforma: ReglasFP). Si algo falla, no se bloquea nada:
+   la base igual controla la nota. */
+var PATRON_TRAYECTO = { seguridad: /seguridad inform/i, planillas: /planillas de c/i, pensamiento: /pensamiento comput/i };
+var DISP = {};
+function cfpGet(ruta) {
+  return tokenVigente().then(function (t) {
+    return fetch(CFP_URL + '/rest/v1/' + ruta, { headers: { apikey: CFP_CLAVE, Authorization: 'Bearer ' + t } })
+      .then(function (r) { if (!r.ok) throw new Error('Error ' + r.status); return r.json(); });
+  });
+}
+function fechaPub(c) {
+  if (c.fecha_publicacion) return String(c.fecha_publicacion).slice(0, 10);
+  var m = String(c.descripcion || '').match(/Fecha de Publicaci[oó]n: (\d{2})\/(\d{2})\/(\d{4})/);
+  return m ? m[3] + '-' + m[2] + '-' + m[1] : null;
+}
+function hoyAR() {
+  var d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }));
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function disponibilidad(tid) {
+  if (!SES || !SES.perfil || SES.perfil.admin || !PATRON_TRAYECTO[tid]) return Promise.resolve(null);
+  var c0 = DISP[tid]; if (c0 && Date.now() - c0.t < 60000) return Promise.resolve(c0.d);
+  var dni, T, clases, mods;
+  return tokenVigente().then(function (tk) {
+    return fetch(CFP_URL + '/rest/v1/rpc/mi_dni', { method: 'POST', headers: { apikey: CFP_CLAVE, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: '{}' })
+      .then(function (r) { if (!r.ok) throw new Error('sin dni'); return r.json(); });
+  }).then(function (miDni) {
+    if (!miDni) throw new Error('sin dni');
+    return cfpGet('inscripciones?select=estudiante_user,estado,trayecto_id&estudiante_user=eq.' + encodeURIComponent(miDni));
+  }).then(function (ins) {
+    ins = (ins || []).filter(function (i) { return String(i.estado || '').toUpperCase() === 'ACTIVA'; });
+    if (!ins.length) throw new Error('sin inscripción');
+    return cfpGet('trayectos?select=*&id=in.(' + ins.map(function (i) { return i.trayecto_id; }).join(',') + ')').then(function (tr) {
+      tr = (tr || []).filter(function (x) { return PATRON_TRAYECTO[tid].test(x.nombre || ''); })
+        .sort(function (a, b) { return String(b.ciclo_lectivo || '').localeCompare(String(a.ciclo_lectivo || '')) || b.id - a.id; });
+      if (!tr.length) throw new Error('sin trayecto');
+      T = tr[0]; dni = String((ins.find(function (i) { return i.trayecto_id === T.id; }) || ins[0]).estudiante_user);
+      return Promise.all([cfpGet('clases?select=*&trayecto_id=eq.' + T.id + '&order=id.asc'), cfpGet('modulos?select=*&trayecto_id=eq.' + T.id + '&order=id.asc')]);
+    });
+  }).then(function (r) {
+    clases = r[0] || []; mods = r[1] || [];
+    if (mods.length < 2 || typeof ReglasFP === 'undefined' || !clases.length) return null;
+    var ids = clases.map(function (c) { return c.id; }).join(',');
+    return Promise.all([
+      cfpGet('entregas_actividades?select=*&clase_id=in.(' + ids + ')'),
+      cfpGet('asistencias?select=estudiante_user,modulo_id,estado&trayecto_id=eq.' + T.id + '&estudiante_user=eq.' + encodeURIComponent(dni)),
+      cfpGet('modulos_acreditados?select=*&trayecto_id=eq.' + T.id + '&estudiante_user=eq.' + encodeURIComponent(dni)).catch(function () { return []; }),
+      cfpGet('excepciones_estudiantes?select=*&habilitado=eq.true&trayecto_id=eq.' + T.id + '&estudiante_user=eq.' + encodeURIComponent(dni)).catch(function () { return []; })
+    ]).then(function (x) {
+      return ReglasFP.evaluar({ key: dni, modulos: mods, clases: clases, entregas: x[0] || [], asistencias: x[1] || [], acreditados: x[2] || [],
+        computaAsistencia: ReglasFP.computaAsistencia(T), excepcion: !!(x[3] && x[3].length) });
+    });
+  }).then(function (ev) {
+    var hoy = hoyAR(), d = {}, t = TRAYECTOS[tid];
+    Object.keys(t.practicas).forEach(function (n) {
+      var re = new RegExp('^\\s*pr[aá]ctica\\s*0*' + n + '([^0-9]|$)', 'i');
+      var c = clases.filter(function (x) { return !x.estudiante_user && x.calificable !== false && re.test(x.titulo || ''); }).pop();
+      if (!c) { d[n] = { e: 'sin_clase' }; return; }
+      var f = fechaPub(c);
+      if (f && f > hoy) { d[n] = { e: 'no_publicada', f: f }; return; }
+      var m = ev && ev.modulos.find(function (x) { return Number(x.id) === Number(c.modulo_id); });
+      d[n] = m && m.bloqueado ? { e: 'modulo' } : { e: 'ok' };
+    });
+    DISP[tid] = { t: Date.now(), d: d }; return d;
+  }).catch(function () { return null; });
+}
+function textoBloqueo(x) {
+  if (!x || x.e === 'ok') return '';
+  if (x.e === 'no_publicada') { var p = x.f.split('-'); return 'Se habilita el ' + p[2] + '/' + p[1]; }
+  if (x.e === 'modulo') return 'Se habilita al aprobar el módulo anterior';
+  return 'Todavía no está disponible';
+}

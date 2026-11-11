@@ -38,8 +38,9 @@ function homeTrayecto(t){header(t.nombre,'Prácticas del trayecto');sincronizarP
     h+='</div><p class="hint">Ganás la insignia de un módulo cuando sacás 70 o más en todas sus prácticas. Se guardan en este navegador.</p>'}
   mods.forEach(function(mo,i){var col=TN[TONOS[i%TONOS.length]][2];h+='<h3>Módulo '+ROM[mo]+' · '+esc(t.modulos[mo])+'</h3><div class="plist">';
     Object.keys(t.practicas).map(Number).sort(function(a,b){return a-b}).forEach(function(id){var p=t.practicas[id];if(p.mod!==mo)return;
-      h+='<button class="pitem" onclick="location.hash=\'#/'+t.id+'/'+id+'\'"><span class="num" style="background:'+col+'">'+id+'</span><span><b>'+esc(p.title)+'</b><br><span class="hint">Clase '+id+'</span></span>'+(done[id]!=null?'<span class="st">'+done[id]+'/100</span>':'')+'</button>'});h+='</div>'});
-  h+=pieSesion()+'<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0)}
+      h+='<button class="pitem" data-id="'+id+'" onclick="location.hash=\'#/'+t.id+'/'+id+'\'"><span class="num" style="background:'+col+'">'+id+'</span><span><b>'+esc(p.title)+'</b><br><span class="hint">Clase '+id+'</span></span>'+(done[id]!=null?'<span class="st">'+done[id]+'/100</span>':'')+'</button>'});h+='</div>'});
+  h+=pieSesion()+'<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0);
+  disponibilidad(t.id).then(function(d){if(!d)return;app.querySelectorAll('.pitem[data-id]').forEach(function(b){var x=d[b.dataset.id],tx=textoBloqueo(x);if(!tx)return;b.classList.add('lock');var s=b.querySelector('.hint');if(s)s.textContent='🔒 '+tx})})}
 
 /* ---------------- PRÁCTICA ---------------- */
 function codigoDe(per){var ap=per.apellido||String(per.nombre||'').split(',')[0].trim().split(/\s+/).pop();return (String(ap||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-ZÑ]/g,'')||'ESTUDIANTE')+(per.dni4||'0000')}
@@ -64,10 +65,12 @@ function startPractice(tid,id){
   var nombre=per.nombre.split(', ')[1]||per.nombre;
   app.innerHTML='<section class="screen"><div class="intro-ic">'+ic(p.icon,p.tone)+'</div><span class="tag">Práctica '+id+'</span><h1>'+esc(p.title)+'</h1><p class="lead">'+p.intro+'</p><div class="card" id="est">Revisando tu nota en la plataforma del CFP…</div>'+recordatorioCFP(p)+pieSesion()+'</section>';
   window.scrollTo(0,0);
-  estadoEnCFP(tid,id).then(function(e){
+  Promise.all([estadoEnCFP(tid,id),disponibilidad(tid)]).then(function(r){var e=r[0],dd=r[1]&&r[1][id];
     var st=e.estado,h='<b>Hola, '+esc(nombre)+'</b>',info=p.missions.length+' misiones · unos '+(p.mins||35)+' minutos.',btns='';
     var rev=store('rev-'+tid+'-'+id);
     var bPract='<button class="btn alt" data-m="practica">Practicar sin nota</button>',bRev=rev?'<button class="btn alt" data-m="revision">Ver en qué fallé</button>':'';
+    var bloq=(st==='sin_clase'||st==='no_publicada')?{e:st,f:e.fecha||(dd&&dd.f)}:(dd&&dd.e==='modulo'&&(st==='primer_intento'||st==='reintento'))?dd:null;
+    if(bloq){$('#est').innerHTML='<div class="lockbox">🔒 <b>'+textoBloqueo(bloq)+'.</b><p class="hint">'+(bloq.e==='modulo'?'Igual que en la plataforma del CFP: primero tenés que aprobar el módulo anterior con 70 o más (o tener una habilitación de tu docente).':'Tu docente la publica en la plataforma del CFP cuando llega esta clase. Mientras tanto, seguí con la que te toca.')+'</p></div><button class="btn alt" id="volv">Volver a las prácticas</button>';$('#volv').onclick=function(){location.hash='#/'+tid};return}
     if(st==='primer_intento'){h+='<p class="hint">'+info+' <b>Este intento es el que vale la nota.</b> Leé con atención: si te equivocás, te explica y seguís.</p>';btns='<button class="btn" data-m="nota">Empezar</button>'}
     else if(st==='reintento'){h+='<p class="hint">'+(e.nota!=null?'Tu nota es <b>'+esc(e.nota)+'</b>. ':'Tu docente te habilitó otro intento. ')+'Te queda'+(e.reintentos>1?'n <b>'+e.reintentos+' reintentos</b>':' <b>1 reintento</b>')+'. En un reintento, la nota máxima es <b>70</b>.</p>';btns='<button class="btn" data-m="nota">Hacer el reintento</button>'+bRev+bPract}
     else if(st==='aprobada'||st==='evaluada'||st==='agotada'){h+='<p class="hint">Tu nota en esta práctica: <b>'+esc(e.nota)+'</b>. '+(st==='evaluada'?'Tu docente ya la evaluó.':st==='agotada'?'Ya usaste tus reintentos: si necesitás otro, hablá con tu docente.':'¡Aprobada!')+' Podés repasarla cuando quieras: no cambia tu nota.</p>';btns=bRev+bPract.replace('btn alt','btn')}
