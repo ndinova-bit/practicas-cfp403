@@ -31,7 +31,7 @@ var PR_SEG={
   sug:['Fotos familiares','Correo electrónico','WhatsApp','Home banking o billetera virtual','Documentos de trabajo o estudio','Redes sociales','Contactos del celular'],
   qs:[['¿Cuánto te dolería perderlo?',['Muchísimo','Bastante','Poco'],'me dolería perderlo:'],['¿Tiene copia en otro lugar?',['Sí','No','No sé'],'copia:']]}]},
 
-2:{mod:1,title:'Cuentas y contraseñas',icon:'user',tone:'navy',mins:35,
+2:{mod:1,title:'Cuentas y contraseñas',icon:'user',tone:'navy',mins:45,
  intro:'En la compu de Marta, ella, su hijo Tomás y Rosa entran con la misma cuenta, que es de administrador. Un día Tomás instaló un «juego gratis»… Vamos a ordenar esas cuentas.',
  missions:[
  {type:'sort',title:'¿Quién necesita qué?',lead:'Una cuenta de <b>administrador</b> puede cambiar todo. Una <b>estándar</b> usa la compu sin tocar lo importante. ¿Qué cuenta alcanza para cada tarea?',bins:['Alcanza con estándar','Necesita administrador'],
@@ -47,7 +47,8 @@ var PR_SEG={
  {type:'quiz',title:'Verdadero o falso',lead:'Tres ideas sobre contraseñas. ¿Son ciertas?',row:true,items:[
   {q:'Usar la misma contraseña en el correo y en el banco está bien si es muy larga.',opts:['Verdadero','Falso'],a:1,why:'Si un sitio se filtra, prueban esa clave en todos lados. Tiene que ser distinta en cada lugar.'},
   {q:'Una app de linterna no necesita permiso para ver mis contactos.',opts:['Verdadero','Falso'],a:0,why:'Cada app debería tener solo los permisos que necesita. Una linterna no necesita tus contactos.'},
-  {q:'Prestarle la contraseña a un amigo de confianza no tiene riesgo.',opts:['Verdadero','Falso'],a:1,why:'Una contraseña compartida deja de ser tuya: no sabés dónde la anota ni a quién se la pasa.'}]}]},
+  {q:'Prestarle la contraseña a un amigo de confianza no tiene riesgo.',opts:['Verdadero','Falso'],a:1,why:'Una contraseña compartida deja de ser tuya: no sabés dónde la anota ni a quién se la pasa.'}]},
+ CFGS.cuenta]},
 
 3:{mod:1,title:'Copias que salvan',icon:'cloud',tone:'teal',mins:30,cfp:'Actividad 3 · Mi copia, comprobada',
  intro:'Marta perdió tres años de trabajo por no tener copias. Vamos a aprender a hacerlas bien, y sobre todo a comprobar que sirven.',
@@ -66,7 +67,7 @@ var PR_SEG={
   sug:['Fotos del celular','Documentos de trabajo','Trabajos del curso','Contactos','Conversaciones de WhatsApp'],
   qs:[['¿Dónde vas a guardar la copia?',['Pendrive o disco','Nube','Otra compu'],'dónde:'],['¿Cada cuánto?',['Cada semana','Cada mes','Cada vez que cambia'],'frecuencia:']]}]},
 
-4:{mod:1,title:'Malware al acecho',icon:'bug',tone:'coral',mins:40,cfp:'Actividad 4 · Diagnóstico de la compu de Marta',
+4:{mod:1,title:'Malware al acecho',icon:'bug',tone:'coral',mins:50,cfp:'Actividad 4 · Diagnóstico de la compu de Marta',
  intro:'A la panadería llegó un correo con una «factura». Rosa lo abrió y apareció un cartel: «Tus archivos fueron bloqueados». Por suerte, Marta ya tenía copias. Vamos a entender qué pasó.',
  missions:[
  {type:'sort',title:'Conocé a la banda',lead:'Cada tipo de malware hace algo distinto. Ubicá cada descripción.',bins:['Troyano','Ransomware','Spyware','Adware'],
@@ -78,6 +79,7 @@ var PR_SEG={
   {q:'<span style="font-family:monospace">fotos_cumple.zip.exe</span>',opts:['Tranquilo','Cuidado'],a:1,why:'Lo último es .exe: es un programa disfrazado de archivo comprimido.'},
   {q:'<span style="font-family:monospace">lista_precios.xlsx</span>',opts:['Tranquilo','Cuidado'],a:0,why:'Es una planilla. Si no la esperabas, preguntá antes de abrirla.'},
   {q:'<span style="font-family:monospace">comprobante.scr</span>',opts:['Tranquilo','Cuidado'],a:1,why:'.scr es un tipo de programa. Un comprobante nunca debería ser un programa.'}]},
+ CFGS.revision,
  {type:'check',title:'Revisá tu equipo',lead:'Ahora en tu compu o tu celular de verdad. Marcá lo que pudiste hacer.',min:2,items:[
   '<b>Compu:</b> abrí <b>Seguridad de Windows</b> y ejecuté un <b>Examen rápido</b>',
   '<b>Compu:</b> en el Explorador de archivos activé <b>Ver › Extensiones de nombre de archivo</b>',
@@ -102,13 +104,14 @@ var PR_SEG={
   {q:'Te deja moverte por la casa con el celular.',opts:['Con cable','Wifi'],a:1,why:'La comodidad del wifi: sin cables.'},
   {q:'Para que alguien se meta, tiene que enchufarse físicamente.',opts:['Con cable','Wifi'],a:0,why:'Por eso el wifi necesita una buena clave: la señal sale de tu casa.'}]}]},
 
-6:{mod:2,title:'Tu red de casa',icon:'router',tone:'teal',mins:35,cfp:'Actividad 6 · El relevamiento de mi wifi',
+6:{mod:2,title:'Tu red de casa',icon:'router',tone:'teal',mins:45,cfp:'Actividad 6 · El relevamiento de mi wifi',
  intro:'El router es la puerta de entrada de tu casa a internet. Hoy vamos a ver cómo está configurado el de Marta… y a revisar el tuyo.',
  missions:[
  {type:'sort',title:'Cada aparato, su función',lead:'Ubicá cada descripción en el aparato que corresponde.',bins:['Módem','Router','Switch','Dispositivo final'],
   items:[['Traduce la señal que llega del proveedor de internet',0],['Lo instala la empresa de internet en tu casa',0],['Reparte internet a todos los equipos y arma el wifi',1],['Tiene la clave del wifi',1],['Suma más bocas de cable cuando no alcanzan',2],['Tu celular',3],['El televisor inteligente',3]],end:'Hoy muchas veces el módem y el router vienen juntos en un solo aparato.'},
  {type:'spot',title:'El router de Marta',lead:'Esta es la configuración del router de la panadería. Encontrá las <b>4 cosas</b> que hay que cambiar.',need:4,win:'Configuración del router · 192.168.0.1',
   html:'<b>Nombre de la red (SSID):</b> '+SN('El nombre puede ser cualquiera. Mejor si no da datos personales, pero no es lo más grave.','Panaderia_Marta')+'<br><br><b>Seguridad:</b> '+SP('WEP es un cifrado muy viejo que se rompe fácil. Hay que elegir WPA2 o WPA3.','WEP')+'<br><br><b>Clave del wifi:</b> '+SP('Corta y fácil de adivinar: el nombre del negocio con números.','marta123')+'<br><br><b>Botón WPS:</b> '+SP('WPS permite conectarse sin la clave apretando un botón: si no lo usás, apagalo.','Activado')+'<br><br><b>Usuario del panel:</b> admin · <b>Clave del panel:</b> '+SP('Es la clave que viene de fábrica: está publicada en internet. Hay que cambiarla.','admin')+'<br><br><b>Firewall:</b> '+SN('El firewall activado está bien.','Activado')},
+ CFGS.router,
  {type:'quiz',title:'WPA2, WPA3, ¿qué?',lead:'Leé estas situaciones sobre la seguridad del wifi.',items:[
   {q:'¿Qué tipo de seguridad conviene elegir en el router?',opts:['Abierta (sin clave)','WEP','WPA2 o WPA3'],a:2,why:'WPA2 y WPA3 son los actuales. WPA3 es el más nuevo; si tu router no lo tiene, WPA2 está bien.'},
   {q:'Un vecino te pide la clave del wifi «para una urgencia». ¿Qué conviene?',opts:['Dársela y cambiarla después','Dársela para siempre','Ofrecerle la red de invitados si el router la tiene'],a:2,why:'La red de invitados le da internet sin dejarlo ver tus equipos. Si no tenés, cambiá la clave después.'},
@@ -179,7 +182,7 @@ var PR_SEG={
   items:[['Comprobar que un archivo descargado no fue modificado',0],['No se puede volver atrás',0],['Siempre da el mismo largo',0],['Proteger un archivo para que solo lo abra quien tiene la clave',1],['Con la clave correcta se recupera el original',1],['Lo que hace 7-Zip con contraseña',1]],end:'El hash comprueba. El cifrado esconde.'},
  {type:'check',title:'Huella en tu compu (opcional)',lead:'Si tenés compu, probalo de verdad. Si no, marcá la última.',min:1,items:['Creé un archivo <b>huella.txt</b> con la palabra hola','En Windows ejecuté <b>certutil -hashfile huella.txt SHA256</b> (en Mac: <b>shasum -a 256 huella.txt</b>)','Cambié una letra, repetí el comando y vi que la huella cambió','No tengo compu: hice todo en esta práctica']}]},
 
-11:{mod:3,title:'Un llavero para tus claves',icon:'key',tone:'violet',mins:35,cfp:'Actividad 11 · Mi llavero digital',
+11:{mod:3,title:'Un llavero para tus claves',icon:'key',tone:'violet',mins:45,cfp:'Actividad 11 · Mi llavero digital',
  intro:'¿Una contraseña distinta y larga para cada cuenta? Imposible de recordar… salvo que uses un gestor de contraseñas: un llavero cifrado que las guarda por vos.',
  missions:[
  {type:'quiz',title:'¿Para qué sirve un gestor?',lead:'Un gestor de contraseñas guarda todas tus claves cifradas. Vos recordás una sola: la contraseña maestra.',items:[
@@ -189,7 +192,8 @@ var PR_SEG={
  {type:'pwd',title:'Tu contraseña maestra de práctica',lead:'La maestra es la llave del llavero. Practicá cómo debería ser (no uses una real).',
   rules:[['Tiene 20 caracteres o más','return p.length>=20'],['Tiene 5 palabras o más','return p.trim().split(/\\s+/).length>=5'],['Incluye al menos un número','return /\\d/.test(p)'],['No contiene «123», «contraseña» ni «password»','return !/123|contrase|password/i.test(p)']],
   end:'Una maestra así es muy difícil de adivinar y se puede recordar. Hacé la tuya con la misma idea.'},
- {type:'order',title:'Empezar con Bitwarden',lead:'Ordená los pasos para empezar a usar Bitwarden, un gestor gratuito.',steps:['Bajar la app oficial de Bitwarden (tienda del celular o bitwarden.com)','Crear la cuenta con tu correo','Elegir una contraseña maestra larga y anotarla en papel','Agregar tu primera contraseña (por ejemplo, la del correo)','Agregar dos contraseñas más','Probar entrar a un sitio usando el gestor'],why:'Con 3 contraseñas guardadas ya tenés el hábito armado.'}]},
+ {type:'order',title:'Empezar con Bitwarden',lead:'Ordená los pasos para empezar a usar Bitwarden, un gestor gratuito.',steps:['Bajar la app oficial de Bitwarden (tienda del celular o bitwarden.com)','Crear la cuenta con tu correo','Elegir una contraseña maestra larga y anotarla en papel','Agregar tu primera contraseña (por ejemplo, la del correo)','Agregar dos contraseñas más','Probar entrar a un sitio usando el gestor'],why:'Con 3 contraseñas guardadas ya tenés el hábito armado.'},
+ CFGS.bitwarden]},
 
 12:{mod:3,title:'Doble llave: la verificación en dos pasos',icon:'otp',tone:'violet',mins:40,cfp:'Actividad 12 · Mi cuenta con doble llave',
  intro:'Aunque alguien sepa tu contraseña, con la verificación en dos pasos no puede entrar sin tu celular. Es la mejor defensa contra el robo de cuentas.',
@@ -215,7 +219,7 @@ var PR_SEG={
   items:[['«Tenés 2 horas para responder»',0],['«Último aviso»',0],['«Tu cuenta será bloqueada»',1],['«Detectamos una compra sospechosa»',1],['«Ganaste un celular»',2],['«Reintegro de $50.000 a tu favor»',2],['«Le escribe el área de seguridad del banco»',3],['«Soy tu jefe, necesito que transfieras ya»',3]],end:'Si un mensaje te hace sentir apuro, miedo o mucha alegría, frená. Ese es el momento de desconfiar.'},
  {type:'order',title:'Me llegó algo raro, ¿qué hago?',lead:'Ordená qué conviene hacer.',steps:['No tocar ningún enlace ni adjunto','Fijarse quién lo manda y la dirección real','Entrar por la app o la web oficial escribiéndola vos','Si era falso, marcarlo como spam y borrarlo','Si ya pusiste datos, cambiar la contraseña enseguida'],why:'Y contale a alguien: a la próxima persona le puede servir.'}]},
 
-14:{mod:4,title:'Al día y en el café',icon:'update',tone:'coral',mins:30,cfp:'Actividad 14 · Al día y en la calle',
+14:{mod:4,title:'Al día y en el café',icon:'update',tone:'coral',mins:40,cfp:'Actividad 14 · Al día y en la calle',
  intro:'Las actualizaciones tapan agujeros de seguridad. Y las redes wifi públicas, como la del café o la plaza, tienen sus riesgos. Hoy vemos las dos cosas.',
  missions:[
  {type:'quiz',title:'¿Para qué actualizar?',lead:'Tres situaciones sobre actualizaciones.',items:[
@@ -232,7 +236,8 @@ var PR_SEG={
   ['search','Leer las noticias',0,'Leer noticias no expone tus datos.'],
   ['chat','Mandar un mensaje por WhatsApp',0,'WhatsApp cifra tus mensajes de punta a punta.'],
   ['eye','Mirar el pronóstico del tiempo',0,'Sin riesgo.'],
-  ['phone','Usar los datos móviles para entrar al banco',0,'¡Eso está bien! Es la alternativa segura.']],end:'En un wifi público: leer sí; bancos, compras y contraseñas, mejor con los datos del celular.'}]},
+  ['phone','Usar los datos móviles para entrar al banco',0,'¡Eso está bien! Es la alternativa segura.']],end:'En un wifi público: leer sí; bancos, compras y contraseñas, mejor con los datos del celular.'},
+ CFGS.updates]},
 
 15:{mod:4,title:'¿Quién ve lo que publico?',icon:'eye',tone:'coral',mins:35,cfp:'Actividad 15 · Mi perfil, revisado',
  intro:'Lo que publicás en redes lo puede ver mucha más gente de la que imaginás. Hoy revisamos qué conviene mostrar y qué no.',
@@ -247,7 +252,7 @@ var PR_SEG={
   {q:'Querés que solo tus amigos vean tus fotos de Instagram.',opts:['Pongo la cuenta privada','Borro todas las fotos','No se puede'],a:0,why:'Configuración › Privacidad de la cuenta › Cuenta privada.'}]}]},
 
 
-16:{mod:4,title:'La red de la oficina en 3D',icon:'network',tone:'navy',mins:40,cfp:'Actividad 16 · Mi plan de seguridad',
+16:{mod:4,title:'La red de la oficina en 3D',icon:'network',tone:'navy',mins:50,cfp:'Actividad 16 · Mi plan de seguridad',
  intro:'Juntamos todo lo del trayecto en una oficina entera, en 3D: sus equipos, sus puntos débiles y cuatro ataques reales. Tu misión: prender las medidas justas para <b>frenar los cuatro</b>. Conviene hacerla en una compu; en el celular también funciona.',
  missions:[
  {type:'sim',title:'Frená los cuatro ataques',origen:'red-oficina-3d',src:'simulaciones/red-oficina-3d.html',
@@ -263,7 +268,8 @@ var PR_SEG={
   {q:'¿Cuál es la <b>menor</b> cantidad de medidas que frena los cuatro ataques?',opts:['Dos: firewall y Wi-Fi con WPA3','Tres: firewall, Wi-Fi con WPA3 y equipos actualizados','Las seis'],a:1,why:'El firewall frena el escaneo, el Wi-Fi con WPA3 frena al intruso y el antivirus actualizado frena el correo falso y el ransomware en la PC.',hint:'Con dos, el correo falso y el ransomware igual llegan a la PC.'},
   {q:'Con tres alcanza en la simulación. ¿Por qué <b>igual</b> conviene prender las seis?',opts:['Porque ninguna medida es perfecta: si una falla, la siguiente frena o achica el daño','Porque con más medidas la red anda más rápido','No conviene: con tres alcanza'],a:0,why:'Se llama <b>defensa en capas</b>: un antivirus puede no reconocer un virus nuevo, y ahí te salva lo que viene después.'},
   {q:'Alguien ya consiguió tu contraseña. ¿Qué medida lo frena igual?',opts:['El firewall','El segundo factor','El Wi-Fi con WPA3'],a:1,why:'Con la contraseña sola no alcanza: también necesita el código de tu celular.'},
-  {q:'Un ransomware cifró todo el servidor. ¿Qué te salva los archivos?',opts:['Una copia de respaldo desconectada','Apagar el router','El personal capacitado'],a:0,why:'Es tu plan de copias de esta clase: si la copia estaba desconectada, el ransomware no la alcanzó y se restaura.'}]}]},
+  {q:'Un ransomware cifró todo el servidor. ¿Qué te salva los archivos?',opts:['Una copia de respaldo desconectada','Apagar el router','El personal capacitado'],a:0,why:'Es tu plan de copias de esta clase: si la copia estaba desconectada, el ransomware no la alcanzó y se restaura.'}]},
+ CFGS.robo]},
 
 /* ================= MÓDULO V ================= */
 17:{mod:5,title:'No confíes en lo que escriben',icon:'form',tone:'green',mins:35,
