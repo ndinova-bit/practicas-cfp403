@@ -180,3 +180,8 @@ body.ancho main{max-width:1240px}
 @media (max-width:900px){.cgoals li{padding:6px 9px;font-size:14px}.cfgtask .card{padding:12px}.cfgtask .btn{padding:10px;font-size:15px}.cfgdev{min-height:0}}
 .pitem.lock{opacity:.55}.pitem.lock .num{background:#9aa7b7!important}
 .lockbox{background:var(--amber-l);border-radius:12px;padding:12px 14px;margin-top:8px}
+
+/* Fondo de la pantalla de inicio */
+body.inicio{background:#7B8CA0 url(fondo-inicio.jpg) center/cover no-repeat fixed;min-height:100vh}
+body.inicio .screen{background:rgba(255,255,255,.93);border-radius:20px;padding:16px 16px 20px;margin-top:8px;box-shadow:0 8px 30px rgba(15,30,60,.25)}
+body.inicio .teacher-link{color:var(--muted)}

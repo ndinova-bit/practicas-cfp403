@@ -24,7 +24,7 @@ function render(){simLimpiar();
 }
 window.addEventListener('hashchange',render);
 function header(t,s){S=null;$('#homeBtn').style.display=t?'inline-block':'none';$('#homeBtn').onclick=goHome;$('#hT').textContent=t||'Prácticas · CFP N.º 403';$('#hS').textContent=s||'Plataforma de prácticas virtuales';$('#steps').innerHTML=''}
-function homeGeneral(){header();
+function homeGeneral(){header();document.body.classList.add('inicio');
   var h='<section class="screen"><div class="intro-ic">'+ic('medal','teal')+'</div><h1 style="text-align:center">Plataforma de prácticas</h1><p class="lead" style="text-align:center">Elegí el trayecto que estás cursando.</p>';
   ORDEN.forEach(function(id){var t=TRAYECTOS[id],n=Object.keys(t.practicas).length;
     h+='<button class="tcard"'+(n?' onclick="location.hash=\'#/'+id+'\'"':' disabled')+'>'+ic(t.icono,t.tono)+'<span><b>'+esc(t.nombre)+'</b><br><span class="hint">'+(n?n+' prácticas':'Próximamente')+'</span></span>'+(n?'':'<span class="soon">Pronto</span>')+'</button>'});
@@ -107,7 +107,7 @@ TYPES.quiz=function(m,z){var i=0,first,score=0,log=[];
   show();};
 /* --- SIM (simulación interactiva en un iframe del mismo sitio; avisa el avance con postMessage) --- */
 var SIM_OFF=null;
-function simLimpiar(){if(SIM_OFF){SIM_OFF();SIM_OFF=null}document.body.classList.remove('ancho')}
+function simLimpiar(){if(SIM_OFF){SIM_OFF();SIM_OFF=null}document.body.classList.remove('ancho');document.body.classList.remove('inicio')}
 TYPES.sim=function(m,z){document.body.classList.add('ancho');
   var EST={block:['ok','Frenado'],mitigate:['warn','Daño limitado'],hit:['bad','Comprometido']},total=m.ataques.length,vistos={},mejor=0,msgs=0,hecho=false,salteo=false;
   z.innerHTML='<div class="card guia"><div class="counter">Cómo hacerla, paso a paso</div><div class="gpasos">'+m.guia.map(function(g,k){return '<div class="gpaso" id="gp'+k+'"><div class="gnum">'+(k+1)+'</div>'+ic(g.ic,g.tone)+'<div class="gtx"><b>'+g.t+'</b><span>'+g.d+'</span>'+(g.demo?'<div class="gdemo">'+g.demo+'</div>':'')+'</div><div class="gok">✓</div></div>'}).join('')+'</div></div>'+
