@@ -1,6 +1,7 @@
 /* Escenarios del simulador «Configurá» para Seguridad Informática Básico.
    Son pantallas de mentira, parecidas a las reales: los nombres de los menús
    cambian un poco según la marca y la versión. */
+var URL_R = '192.168.100.1';
 var WPA_OK = ['WPA2-PSK (AES)', 'WPA2/WPA3', 'WPA3-SAE'];
 function CFG_OTRA(t) { return { title: t, items: [{ info: 'En esta sección no está lo que buscás. Tocá <b>‹</b> para volver.' }] }; }
 
@@ -10,13 +11,22 @@ var CFGS = {
 router: {
   type: 'cfg', device: 'router', title: 'Configurá el router de Marta',
   lead: 'Es un panel de router de práctica, igual a los de verdad. Entrá con los datos de la etiqueta y dejá el wifi bien cerrado. <b>No toca ningún router real.</b>',
-  intro: 'Escribí <b>192.168.1.1</b> en el navegador (ya está escrito) y entrá con los datos de la etiqueta.',
+  intro: 'Cada router tiene su dirección. Buscá la de este en la <b>etiqueta</b>, escribila en el navegador y entrá con el usuario y la contraseña de la etiqueta.',
   fin: 'El wifi de la panadería quedó cerrado. En la vida real, al guardar se desconectan todos los equipos y hay que volver a conectarlos con la clave nueva.',
-  start: 'login',
-  state: { ssid: 'Panaderia_Marta', sec: 'WEP', key: 'marta123', wps: true, adm: 'admin', inv: false },
+  start: 'url',
+  state: { ssid: 'Panaderia_Marta', sec: 'WEP', key: 'marta123', wps: true, adm: 'admin', inv: false, dir: '' },
   screens: {
-    login: { title: 'Iniciar sesión', login: { next: 'home', user: function () { return 'admin'; }, pass: function (s) { return s.adm; },
-      etiqueta: [['Modelo', 'Router WR-840'], ['Panel', 'http://192.168.1.1'], ['Usuario', 'admin'], ['Contraseña', 'admin'], ['Red Wi-Fi', 'Panaderia_Marta']] } },
+    url: { title: 'Nueva pestaña', url: 'escribí la dirección acá', items: [
+      { txt: 'dir', t: 'Barra de direcciones del navegador', ph: 'por ejemplo: 192.168.0.1' },
+      { act: 'ir', t: 'Ir', run: function (s) {
+        var d = (s.dir || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+        if (d === '192.168.100.1') return { nav: 'login' };
+        if (/^(192\.168\.\d+\.\d+|10\.0\.0\.1)$/.test(d)) return { err: 'No se puede acceder a <b>' + esc(d) + '</b>: esa no es la dirección de <b>este</b> router. Cada router tiene la suya: mirá la etiqueta.' };
+        return { err: 'Eso no es una dirección de router. Tiene que ser 4 números con puntos, como la de la etiqueta.' };
+      } },
+      { info: '<div class="cetq" style="margin:0"><div class="cetqt">Etiqueta pegada abajo del router de la panadería</div><div><span>Modelo</span><b>HG8145 (fibra)</b></div><div><span>Acceso al panel</span><b>http://192.168.100.1</b></div><div><span>Usuario</span><b>admin</b></div><div><span>Contraseña</span><b>admin</b></div><div><span>Red Wi-Fi</span><b>Panaderia_Marta</b></div></div>' }] },
+    login: { title: 'Iniciar sesión', url: '192.168.100.1', login: { next: 'home', user: function () { return 'admin'; }, pass: function (s) { return s.adm; },
+      etiqueta: [['Usuario', 'admin'], ['Contraseña', 'admin']] } },
     home: { title: 'Estado del router', items: [
       { info: function (s) { return 'Conectado a internet · <b>6 equipos</b> conectados · Red: <b>' + esc(s.ssid) + '</b>'; } },
       { nav: 'wifi', t: 'Wi-Fi', d: 'Nombre, seguridad y clave', ic: 'wifi', tone: 'teal' },
@@ -56,7 +66,7 @@ router: {
     reini: CFG_OTRA('Reiniciar')
   },
   goals: [
-    { t: 'Seguridad del Wi-Fi en <b>WPA2 o WPA3</b>', ok: function (s) { return WPA_OK.indexOf(s.sec) >= 0; }, ruta: 'Wi-Fi › Tipo de seguridad › elegí WPA2/WPA3 › Guardar.' },
+    { t: 'Seguridad del Wi-Fi en <b>WPA2 o WPA3</b>', ok: function (s) { return WPA_OK.indexOf(s.sec) >= 0; }, ruta: 'Primero entrá al panel: escribí <b>192.168.100.1</b> (está en la etiqueta). Después: Wi-Fi › Tipo de seguridad › WPA2/WPA3 › Guardar.' },
     { t: 'Clave del Wi-Fi larga: <b>12 o más</b> caracteres y sin «marta»', ok: function (s) { return (s.key || '').length >= 12 && !/marta/i.test(s.key); }, ruta: 'Wi-Fi › Clave del Wi-Fi: una frase como «medialunas de manteca 2026» › Guardar.' },
     { t: '<b>WPS</b> apagado', ok: function (s) { return !s.wps; }, ruta: 'Volvé al inicio del panel › WPS › apagá el interruptor › Guardar.' },
     { t: 'Clave del <b>panel</b> cambiada: no «admin», 10 o más caracteres', ok: function (s) { return s.adm !== 'admin' && (s.adm || '').length >= 10; }, ruta: 'Sistema › Contraseña del panel › escribí una nueva › Guardar.' }]
@@ -482,4 +492,139 @@ CFGS.copia = {
         { t: '<b>Fotos de iCloud</b> activadas', ok: function (s) { return s.fot; }, ruta: 'Ajustes › tu nombre › iCloud › Fotos › Sincronizar este iPhone.' },
         { t: '<b>Copia en iCloud</b> activada', ok: function (s) { return s.icb; }, ruta: 'Ajustes › tu nombre › iCloud › Copia en iCloud.' },
         { t: 'Copia <b>hecha ahora</b>', ok: function (s) { return s.hecha; }, ruta: 'En Copia en iCloud: «Realizar copia ahora».' }] }]
+};
+
+/* ------------------------------------------------- Clase 6 · ¿Cuál es la dirección de tu router? */
+function GW_NAV(gw, sig) { return { title: 'Navegador', items: [
+  { txt: 'dir', t: 'Barra de direcciones', ph: 'escribí la dirección del router' },
+  { act: 'ir', t: 'Ir', run: function (s) {
+    var d = (s.dir || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (d === gw) { s.ok = true; return { nav: 'panel' }; }
+    return { err: 'No se puede acceder a esa dirección. Buscá la <b>' + sig + '</b> de tu wifi y escribila igual.' };
+  } }] }; }
+var GW_PANEL = { title: 'Panel del router', items: [{ info: '✔ <b>¡Llegaste!</b> Esta es la página de inicio de sesión de tu router. Para entrar hacen falta el usuario y la contraseña <b>del panel</b> (están en la etiqueta), y ser quien administra el servicio.' },
+  { txt: 'u', t: 'Usuario' }, { pwd: 'p', t: 'Contraseña' }] };
+CFGS.gateway = {
+  type: 'cfg', title: '¿Cuál es la dirección de tu router?',
+  lead: 'No todos los routers usan la misma dirección: 192.168.0.1, 192.168.1.1, 192.168.100.1, 10.0.0.1… Cada uno tiene la suya. Se averigua en el equipo conectado al wifi: es la <b>puerta de enlace</b> (en iPhone le dicen <b>router</b>).',
+  fin: 'Así se encuentra la dirección de <b>cualquier</b> router. Hacelo con tu wifi de verdad y anotala: la vas a necesitar.',
+  variantes: [
+    { t: 'Android', ic: 'phone', tone: 'green', device: 'android', start: 'ini',
+      intro: 'En los Samsung está en Conexiones › Wi-Fi; en otros, en Redes e Internet › Wi-Fi. Siempre en el engranaje ⚙ de tu red.',
+      state: { visto: false, ok: false, dir: '', u: '', p: '' },
+      screens: {
+        ini: { title: 'Inicio', grid: true, items: [{ nav: 'aj', t: 'Ajustes', ic: 'gear', tone: 'navy' }, { nav: 'nav', t: 'Chrome', ic: 'globe', tone: 'teal' }, { nav: 'nada', t: 'Cámara', ic: 'eye', tone: 'violet' }] },
+        nada: { title: 'App', items: [{ info: 'Esta app no sirve para esto. Tocá <b>‹</b>.' }] },
+        aj: { title: 'Ajustes', items: [{ nav: 'con', t: 'Conexiones', d: 'Wi-Fi, Bluetooth, modo avión', ic: 'wifi', tone: 'teal' }, { nav: 'o1', t: 'Pantalla', ic: 'phone' }, { nav: 'o2', t: 'Batería', ic: 'plug', tone: 'green' }] },
+        o1: CFG_OTRA('Pantalla'), o2: CFG_OTRA('Batería'),
+        con: { title: 'Conexiones', items: [{ nav: 'wifi', t: 'Wi-Fi', d: 'Casa_Familia', ic: 'wifi', tone: 'teal' }, { nav: 'o3', t: 'Bluetooth', ic: 'toggle' }] },
+        o3: CFG_OTRA('Bluetooth'),
+        wifi: { title: 'Wi-Fi', items: [{ info: 'Red actual' }, { nav: 'det', t: 'Casa_Familia  ⚙', d: 'Conectado', ic: 'wifi', tone: 'green' }, { info: 'Redes disponibles' }, { nav: 'o4', t: 'Vecino_2.4G', d: 'Protegida', ic: 'wifi' }] },
+        o4: { title: 'Vecino_2.4G', items: [{ info: 'Esa no es tu red. Tocá <b>‹</b> y elegí la red a la que estás conectado.' }] },
+        det: { title: 'Casa_Familia', onEnter: function (s) { s.visto = true; }, items: [
+          { info: '<b>Conectado</b> · Seguridad: WPA2-Personal' },
+          { info: '<table class="cdat"><tr><td>Dirección IP</td><td>192.168.0.23</td></tr><tr><td><b>Puerta de enlace</b></td><td><b>192.168.0.1</b></td></tr><tr><td>Máscara de red</td><td>255.255.255.0</td></tr><tr><td>DNS</td><td>192.168.0.1</td></tr></table>' },
+          { info: 'La <b>dirección IP</b> es la de este celular. La <b>puerta de enlace</b> es la del router.' }] },
+        nav: GW_NAV('192.168.0.1', 'puerta de enlace'), panel: GW_PANEL
+      },
+      goals: [
+        { t: 'Encontraste la <b>puerta de enlace</b> de tu wifi', ok: function (s) { return s.visto; }, ruta: 'Ajustes › Conexiones › Wi-Fi › tocá ⚙ en tu red (Casa_Familia).' },
+        { t: 'Abriste el <b>panel del router</b> desde el navegador', ok: function (s) { return s.ok; }, ruta: 'Inicio › Chrome › escribí la puerta de enlace (192.168.0.1) › Ir.' }] },
+    { t: 'iPhone', ic: 'phone', tone: 'navy', device: 'iphone', start: 'ini',
+      state: { visto: false, ok: false, dir: '', u: '', p: '' },
+      screens: {
+        ini: { title: 'Inicio', grid: true, items: [{ nav: 'aj', t: 'Ajustes', ic: 'gear', tone: 'navy' }, { nav: 'nav', t: 'Safari', ic: 'globe', tone: 'teal' }, { nav: 'nada', t: 'Fotos', ic: 'eye', tone: 'amber' }] },
+        nada: { title: 'App', items: [{ info: 'Esta app no sirve para esto. Tocá <b>‹</b>.' }] },
+        aj: { title: 'Ajustes', items: [{ nav: 'wifi', t: 'Wi-Fi', d: 'Casa_Lopez', ic: 'wifi', tone: 'teal' }, { nav: 'o1', t: 'Bluetooth', ic: 'toggle' }, { nav: 'o2', t: 'General', ic: 'gear' }] },
+        o1: CFG_OTRA('Bluetooth'), o2: CFG_OTRA('General'),
+        wifi: { title: 'Wi-Fi', items: [{ nav: 'det', t: '✓ Casa_Lopez  ⓘ', d: 'Tocá la ⓘ de tu red', ic: 'wifi', tone: 'green' }, { nav: 'o3', t: 'Fibertel_WiFi874', ic: 'wifi' }] },
+        o3: { title: 'Fibertel_WiFi874', items: [{ info: 'Esa no es tu red. Tocá <b>‹</b>.' }] },
+        det: { title: 'Casa_Lopez', onEnter: function (s) { s.visto = true; }, items: [
+          { info: '<table class="cdat"><tr><td>Dirección IP</td><td>192.168.1.37</td></tr><tr><td>Máscara de subred</td><td>255.255.255.0</td></tr><tr><td><b>Router</b></td><td><b>192.168.1.1</b></td></tr></table>' },
+          { info: 'En iPhone, la puerta de enlace se llama <b>Router</b>. Está más abajo, en la sección IPv4.' }] },
+        nav: GW_NAV('192.168.1.1', 'dirección de «Router»'), panel: GW_PANEL
+      },
+      goals: [
+        { t: 'Encontraste la dirección del <b>Router</b>', ok: function (s) { return s.visto; }, ruta: 'Ajustes › Wi-Fi › tocá la ⓘ al lado de tu red (Casa_Lopez).' },
+        { t: 'Abriste el <b>panel del router</b> desde el navegador', ok: function (s) { return s.ok; }, ruta: 'Inicio › Safari › escribí la dirección de «Router» (192.168.1.1) › Ir.' }] },
+    { t: 'Compu con Windows', ic: 'laptop', tone: 'teal', device: 'win', start: 'esc',
+      intro: 'Para abrir el Símbolo del sistema de verdad: tocá la tecla Windows, escribí <b>cmd</b> y Enter.',
+      state: { visto: false, ok: false, dir: '', cmd: '', out: '', u: '', p: '' },
+      screens: {
+        esc: { title: 'Escritorio', grid: true, items: [{ nav: 'cmd', t: 'Símbolo del sistema', ic: 'terminal', tone: 'navy' }, { nav: 'nav', t: 'Navegador', ic: 'globe', tone: 'teal' }, { nav: 'nada', t: 'Explorador', ic: 'folder', tone: 'amber' }] },
+        nada: { title: 'App', items: [{ info: 'Esta app no sirve para esto. Tocá <b>‹</b>.' }] },
+        cmd: { title: 'Símbolo del sistema', win: 'Símbolo del sistema', items: [
+          { info: function (s) { return '<pre class="cterm">C:\\Users\\Ana&gt; ' + esc(s.out ? 'ipconfig' : '') + (s.out || '') + '</pre>'; } },
+          { txt: 'cmd', t: 'Escribí el comando', ph: 'ipconfig' },
+          { act: 'en', t: 'Enter', run: function (s) {
+            if (!/^\s*ipconfig(\s+\/all)?\s*$/i.test(s.cmd)) return { err: 'Para ver la dirección del router, escribí <b>ipconfig</b>.' };
+            s.visto = true; s.cmd = '';
+            s.out = '\n\nConfiguración IP de Windows\n\nAdaptador de Ethernet Ethernet:\n   Estado de los medios. . . : medios desconectados\n\nAdaptador de LAN inalámbrica Wi-Fi:\n   Vínculo: dirección IPv6 . : fe80::5c1e:8b2a:9f01:22c4%7\n   <b>Dirección IPv4. . . . . : 192.168.100.45</b>\n   Máscara de subred . . . . : 255.255.255.0\n   <b style="color:#7CFC9A">Puerta de enlace predet. . : 192.168.100.1</b>\n\nAdaptador de Ethernet Conexión de red Bluetooth:\n   Estado de los medios. . . : medios desconectados';
+            return 'Hay varios bloques: mirá el que dice <b>Wi-Fi</b> (o Ethernet, si usás cable). Ahí está la <b>puerta de enlace</b>.';
+          } }] },
+        nav: GW_NAV('192.168.100.1', 'puerta de enlace'), panel: GW_PANEL
+      },
+      goals: [
+        { t: 'Encontraste la <b>puerta de enlace</b> con ipconfig', ok: function (s) { return s.visto; }, ruta: 'Escritorio › Símbolo del sistema › escribí ipconfig › Enter. Mirá el bloque «Wi-Fi».' },
+        { t: 'Abriste el <b>panel del router</b> desde el navegador', ok: function (s) { return s.ok; }, ruta: 'Escritorio › Navegador › escribí la puerta de enlace del bloque Wi-Fi (192.168.100.1) › Ir.' }] }]
+};
+
+/* ------------------------------------------------- Clase 9 · 7-Zip */
+CFGS.zip = {
+  type: 'cfg', device: 'win', title: 'La planilla de Marta, bajo llave',
+  lead: 'Un Windows de práctica con 7-Zip. Instalalo desde el sitio <b>oficial</b>, protegé la planilla con contraseña y comprobá que la pide.',
+  intro: 'Si ya tenés 7-Zip, igual buscá el sitio oficial: es buena costumbre.',
+  fin: 'Planilla protegida. La contraseña se la pasás a la contadora <b>por otro medio</b> (por teléfono, no en el mismo correo).',
+  start: 'esc',
+  state: { inst: false, malo: false, arch: null, sel: '', fmt: '7z', p1: '', p2: '', met: 'AES-256', nom: false, pa: '', abierto: false },
+  screens: {
+    esc: { title: 'Escritorio', grid: true, items: [{ nav: 'nav', t: 'Navegador', ic: 'globe', tone: 'teal' }, { nav: 'exp', t: 'Explorador de archivos', ic: 'folder', tone: 'amber' }] },
+    nav: { title: 'Buscador', win: 'Navegador', items: [
+      { info: 'Buscaste «7-Zip»: elegí bien dónde descargarlo.' },
+      { nav: 'falso', t: '7zip-gratis-descargas.com', d: '⬇ DESCARGAR AHORA · ¡Versión PRO gratis!', ic: 'warning', tone: 'coral' },
+      { nav: 'oficial', t: '7-zip.org', d: '7-Zip · sitio oficial del programa', ic: 'globe', tone: 'green' },
+      { nav: 'falso', t: 'mega-programas.net › 7zip', d: 'Descarga rápida + barra de herramientas', ic: 'warning', tone: 'amber' }] },
+    falso: { title: 'Sitio sospechoso', win: 'Navegador', onEnter: function (s) { s.malo = true; }, items: [{ info: '⚠️ <b>Cuidado.</b> Este sitio no es el oficial: está lleno de botones «Descargar» falsos y suele meter programas de regalo que nadie pidió. Volvé y entrá a <b>7-zip.org</b>.' }] },
+    oficial: { title: '7-zip.org', win: 'Navegador', items: [
+      { info: '<b>7-Zip</b> es un programa gratuito y de código abierto.' },
+      { act: 'd', t: 'Download · 64-bit Windows x64', run: function (s) { s.inst = true; return 'Descargado e instalado: <b>Siguiente › Instalar › Cerrar</b>. Listo.'; } }] },
+    exp: { title: 'Documentos', win: 'Explorador de archivos', items: [
+      { list: function (s) {
+        var f = [{ t: 'Planilla_Marta.xlsx', d: 'Planilla de Excel', ic: 'file', tone: 'green', nav: 'arch', set: { sel: 'xlsx' } }];
+        if (s.arch) f.push({ t: 'Planilla_Marta.' + s.arch.fmt, d: s.arch.pw ? 'Archivo comprimido · con contraseña' : 'Archivo comprimido · <b>sin contraseña</b>', ic: 'lock', tone: s.arch.pw ? 'navy' : 'coral', nav: 'arch', set: { sel: 'z' } });
+        return f; } }] },
+    arch: { title: 'Archivo', win: 'Explorador de archivos', items: [
+      { info: function (s) { return '<b>' + (s.sel === 'xlsx' ? 'Planilla_Marta.xlsx' : 'Planilla_Marta.' + s.arch.fmt) + '</b>'; } },
+      { act: 'cd', t: 'Clic derecho', run: function (s) { if (s.sel !== 'xlsx') return { err: 'Ese ya es el archivo protegido. Para comprobarlo, tocá <b>Abrir</b>.' }; return { nav: 'menu' }; } },
+      { act: 'ab', t: 'Abrir', alt: true, run: function (s) { if (s.sel === 'xlsx') return 'Se abrió la planilla.'; if (!s.arch.pw) return { err: 'Se abrió <b>sin pedir contraseña</b>: no quedó protegido. Hacelo de nuevo con «Añadir al archivo…».' }; return { nav: 'pide' }; } }] },
+    menu: { title: 'Menú del clic derecho', win: 'Explorador de archivos', items: [
+      { nav: 'o1', t: 'Abrir', ic: 'file' }, { nav: 'o1', t: 'Copiar', ic: 'file' },
+      { act: 'z', t: '7-Zip  ›', alt: true, run: function (s) { if (!s.inst) return { err: 'Todavía no instalaste 7-Zip. Volvé al Escritorio › Navegador.' }; return { nav: 'sub' }; } },
+      { nav: 'o1', t: 'Propiedades', ic: 'gear' }] },
+    o1: CFG_OTRA('Otra opción'),
+    sub: { title: '7-Zip', win: 'Explorador de archivos', items: [
+      { act: 'r', t: 'Añadir a "Planilla_Marta.7z"', alt: true, run: function (s) { s.arch = { fmt: '7z', pw: false }; return { nav: 'exp', msg: 'Se creó Planilla_Marta.7z… pero <b>sin contraseña</b>: esa opción rápida no pregunta. Usá «Añadir al archivo…».' }; } },
+      { act: 'a', t: 'Añadir al archivo…', run: function () { return { nav: 'dlg' }; } },
+      { nav: 'o1', t: 'Comprimir y enviar por correo…', ic: 'mail' }] },
+    dlg: { title: 'Añadir al archivo', win: '7-Zip', items: [
+      { sel: 'fmt', t: 'Formato de archivo', opts: ['7z', 'zip'] },
+      { info: 'Cifrado' },
+      { pwd: 'p1', t: 'Introducir contraseña' }, { pwd: 'p2', t: 'Reintroducir contraseña' },
+      { sel: 'met', t: 'Método de cifrado', opts: ['AES-256', 'ZipCrypto'] },
+      { tog: 'nom', t: 'Cifrar nombres de archivo', d: 'Solo en formato 7z' },
+      { act: 'ok', t: 'Aceptar', run: function (s) {
+        if (!s.p1) return { err: 'Sin contraseña, el archivo no queda protegido. Escribila dos veces.' };
+        if (s.p1 !== s.p2) return { err: 'Las dos contraseñas no coinciden.' };
+        s.arch = { fmt: s.fmt, pw: true, largo: s.p1.length, aes: s.met === 'AES-256', clave: s.p1 };
+        return { nav: 'exp', msg: 'Se creó <b>Planilla_Marta.' + s.fmt + '</b> con contraseña.' };
+      } }] },
+    pide: { title: 'Introducir contraseña', win: '7-Zip', items: [
+      { info: 'Introducí la contraseña para <b>Planilla_Marta.' + '</b>' },
+      { pwd: 'pa', t: 'Contraseña' },
+      { act: 'ok', t: 'Aceptar', run: function (s) { if (s.pa !== s.arch.clave) return { err: 'Contraseña incorrecta. Sin la contraseña, nadie lo puede abrir: ni vos.' }; s.abierto = true; s.pa = ''; return { nav: 'exp', msg: 'Contraseña correcta: se abrió. <b>La protección funciona</b> ✔' }; } }] }
+  },
+  goals: [
+    { t: 'Instalaste 7-Zip desde el sitio <b>oficial</b> (7-zip.org)', ok: function (s) { return s.inst; }, ruta: 'Escritorio › Navegador › 7-zip.org › Download.' },
+    { t: 'Planilla protegida con contraseña de <b>12 o más</b> y <b>AES-256</b>', ok: function (s) { return s.arch && s.arch.pw && s.arch.largo >= 12 && s.arch.aes; }, ruta: 'Explorador › Planilla_Marta.xlsx › Clic derecho › 7-Zip › «Añadir al archivo…» › contraseña dos veces › AES-256 › Aceptar.' },
+    { t: '<b>Comprobaste</b>: al abrirlo pide la contraseña', ok: function (s) { return s.abierto; }, ruta: 'Explorador › Planilla_Marta.7z › Abrir › escribí la contraseña.' }]
 };

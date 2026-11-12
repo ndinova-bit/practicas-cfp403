@@ -105,13 +105,14 @@ var PR_SEG={
   {q:'Te deja moverte por la casa con el celular.',opts:['Con cable','Wifi'],a:1,why:'La comodidad del wifi: sin cables.'},
   {q:'Para que alguien se meta, tiene que enchufarse físicamente.',opts:['Con cable','Wifi'],a:0,why:'Por eso el wifi necesita una buena clave: la señal sale de tu casa.'}]}]},
 
-6:{mod:2,title:'Tu red de casa',icon:'router',tone:'teal',mins:45,cfp:'Actividad 6 · El relevamiento de mi wifi',
+6:{mod:2,title:'Tu red de casa',icon:'router',tone:'teal',mins:50,cfp:'Actividad 6 · El relevamiento de mi wifi',
  intro:'El router es la puerta de entrada de tu casa a internet. Hoy vamos a ver cómo está configurado el de Marta… y a revisar el tuyo.',
  missions:[
  {type:'sort',title:'Cada aparato, su función',lead:'Ubicá cada descripción en el aparato que corresponde.',bins:['Módem','Router','Switch','Dispositivo final'],
   items:[['Traduce la señal que llega del proveedor de internet',0],['Lo instala la empresa de internet en tu casa',0],['Reparte internet a todos los equipos y arma el wifi',1],['Tiene la clave del wifi',1],['Suma más bocas de cable cuando no alcanzan',2],['Tu celular',3],['El televisor inteligente',3]],end:'Hoy muchas veces el módem y el router vienen juntos en un solo aparato.'},
  {type:'spot',title:'El router de Marta',lead:'Esta es la configuración del router de la panadería. Encontrá las <b>4 cosas</b> que hay que cambiar.',need:4,win:'Configuración del router · 192.168.0.1',
   html:'<b>Nombre de la red (SSID):</b> '+SN('El nombre puede ser cualquiera. Mejor si no da datos personales, pero no es lo más grave.','Panaderia_Marta')+'<br><br><b>Seguridad:</b> '+SP('WEP es un cifrado muy viejo que se rompe fácil. Hay que elegir WPA2 o WPA3.','WEP')+'<br><br><b>Clave del wifi:</b> '+SP('Corta y fácil de adivinar: el nombre del negocio con números.','marta123')+'<br><br><b>Botón WPS:</b> '+SP('WPS permite conectarse sin la clave apretando un botón: si no lo usás, apagalo.','Activado')+'<br><br><b>Usuario del panel:</b> admin · <b>Clave del panel:</b> '+SP('Es la clave que viene de fábrica: está publicada en internet. Hay que cambiarla.','admin')+'<br><br><b>Firewall:</b> '+SN('El firewall activado está bien.','Activado')},
+ CFGS.gateway,
  CFGS.router,
  {type:'quiz',title:'WPA2, WPA3, ¿qué?',lead:'Leé estas situaciones sobre la seguridad del wifi.',items:[
   {q:'¿Qué tipo de seguridad conviene elegir en el router?',opts:['Abierta (sin clave)','WEP','WPA2 o WPA3'],a:2,why:'WPA2 y WPA3 son los actuales. WPA3 es el más nuevo; si tu router no lo tiene, WPA2 está bien.'},
@@ -140,8 +141,8 @@ var PR_SEG={
  intro:'«No anda internet». ¿Es el celular, el wifi, el router o la empresa? Con tres comandos lo podés averiguar. Vamos a practicar en una terminal simulada.',
  missions:[
  {type:'term',title:'Tu primera terminal',lead:'Escribí los comandos que pide cada tarea y apretá Enter.',banner:'Terminal de práctica del CFP. Nada de lo que escribas toca tu equipo.',
-  tasks:[['Escribí <b>ipconfig</b> para ver la dirección IP de la compu'],['Escribí <b>ping 192.168.1.1</b> para ver si el router responde'],['Escribí <b>ping 8.8.8.8</b> para ver si llegás a internet'],['Escribí <b>ping google.com</b> para ver si funcionan los nombres']],
-  cmds:{'ipconfig( /all)?':[[['o','Configuración IP de Windows'],['o',''],['o','Adaptador de LAN inalámbrica Wi-Fi:'],['g','   Dirección IPv4. . . . . . . . : 192.168.1.34'],['o','   Máscara de subred . . . . . . : 255.255.255.0'],['g','   Puerta de enlace predet.. . . : 192.168.1.1'],['y','   (La puerta de enlace es tu router)']],0],
+  tasks:[['Escribí <b>ipconfig</b> y buscá el bloque <b>Wi-Fi</b>: ahí están tu IP y la de tu router'],['Escribí <b>ping 192.168.1.1</b> (la puerta de enlace que te mostró ipconfig) para ver si el router responde'],['Escribí <b>ping 8.8.8.8</b> para ver si llegás a internet'],['Escribí <b>ping google.com</b> para ver si funcionan los nombres']],
+  cmds:{'ipconfig( /all)?':[[['o','Configuración IP de Windows'],['o',''],['o','Adaptador de Ethernet Ethernet:'],['o','   Estado de los medios. . . . . : medios desconectados'],['o',''],['o','Adaptador de LAN inalámbrica Wi-Fi:'],['o','   Vínculo: dirección IPv6 local : fe80::5c1e:8b2a:9f01:22c4%7'],['g','   Dirección IPv4. . . . . . . . : 192.168.1.34'],['o','   Máscara de subred . . . . . . : 255.255.255.0'],['g','   Puerta de enlace predet.. . . : 192.168.1.1'],['o',''],['o','Adaptador de Ethernet Conexión de red Bluetooth:'],['o','   Estado de los medios. . . . . : medios desconectados'],['y','→ Hay varios bloques: mirá el que dice Wi-Fi (o Ethernet si usás cable).'],['y','→ Dirección IPv4 = tu compu. Puerta de enlace = tu router. En tu casa pueden ser otros números.']],0],
    'ping 192\\.168\\.1\\.1':[[['o','Haciendo ping a 192.168.1.1 con 32 bytes de datos:'],['g','Respuesta desde 192.168.1.1: tiempo=2ms'],['g','Respuesta desde 192.168.1.1: tiempo=3ms'],['y','Enviados = 4, Recibidos = 4, Perdidos = 0  → el router está bien']],1],
    'ping 8\\.8\\.8\\.8':[[['o','Haciendo ping a 8.8.8.8 con 32 bytes de datos:'],['g','Respuesta desde 8.8.8.8: tiempo=21ms'],['g','Respuesta desde 8.8.8.8: tiempo=19ms'],['y','Enviados = 4, Recibidos = 4, Perdidos = 0  → hay salida a internet']],2],
    'ping (www\\.)?google\\.com':[[['o','Haciendo ping a google.com [142.250.79.46]:'],['g','Respuesta desde 142.250.79.46: tiempo=18ms'],['g','Respuesta desde 142.250.79.46: tiempo=17ms'],['y','→ El nombre google.com se tradujo a una IP: los nombres funcionan']],3],
@@ -157,7 +158,7 @@ var PR_SEG={
  {type:'check',title:'Ahora en tu compu (opcional)',lead:'Si tenés una compu con Windows, abrí <b>Símbolo del sistema</b> (buscalo con la lupa) y probá de verdad. Si no tenés compu, marcá solo la última.',min:1,items:['Ejecuté <b>ipconfig</b> y anoté mi dirección IPv4','Ejecuté <b>ping 8.8.8.8</b> y anoté cuántos paquetes llegaron','Ejecuté <b>tracert google.com</b> y conté los saltos','No tengo compu: hice todas las tareas en la terminal simulada']}]},
 
 /* ================= MÓDULO III ================= */
-9:{mod:3,title:'Cifrar es guardar bajo llave',icon:'lock',tone:'violet',mins:35,cfp:'Actividad 9 · Mi archivo bajo llave',
+9:{mod:3,title:'Cifrar es guardar bajo llave',icon:'lock',tone:'violet',mins:40,cfp:'Actividad 9 · Mi archivo bajo llave',
  intro:'Cifrar es transformar un mensaje para que solo pueda leerlo quien tenga la clave. Hoy vas a cifrar y descifrar de verdad.',
  missions:[
  {type:'cipher',title:'Cifrá y descifrá',lead:'Probá primero cifrar un mensaje tuyo. Después abrí el mensaje que te dejó Marta.',secret:'IlSS0kQwI15KsixkDaIMJ7PhPiAnR36OdJTbecjAsxC3L2lu0FP6sV1ki7vZH1Db2xp7/nadebFI9S+nYC809EVnfOZvhXtWfRyaHFOubbHFpUfhKEcZF2YfNMMTNATUuKBw+225e9ME57tu',clue:'es lo que más se vende en la panadería, en singular y en minúscula (una palabra, sin espacios).',after:'Esto mismo hace 7-Zip con tus archivos.'},
@@ -165,9 +166,9 @@ var PR_SEG={
   {q:'Cifrás un archivo con 7-Zip y la contraseña «mate-con-tortas». Para abrirlo usás la misma contraseña. ¿Qué tipo es?',opts:['Simétrico','Asimétrico'],a:0,why:'Una sola clave para cerrar y abrir: simétrico.'},
   {q:'WhatsApp cifra tus mensajes para que solo el destinatario los lea, sin que ustedes hayan acordado una clave. ¿Qué tipo usa para empezar?',opts:['Simétrico','Asimétrico'],a:1,why:'Cada celular tiene su par de llaves: pública y privada. Por eso no tienen que pasarse una clave.'},
   {q:'Si perdés la contraseña de un archivo cifrado con 7-Zip…',opts:['Lo recupero con el antivirus','Lo abro con otro programa','No hay forma de abrirlo'],a:2,why:'Esa es la fuerza del cifrado y también su riesgo: guardá bien la contraseña.'}]},
- {type:'order',title:'Cifrar con 7-Zip',lead:'Ordená los pasos para proteger un archivo con 7-Zip (es gratis).',steps:['Clic derecho sobre el archivo','Elegir 7-Zip › Añadir al archivo…','Escribir una contraseña larga (dos veces)','Elegir cifrado AES-256','Tocar Aceptar','Comprobar que pide contraseña al abrirlo'],why:'El último paso, otra vez, es comprobar que funciona.'}]},
+ CFGS.zip]},
 
-10:{mod:3,title:'La huella de los archivos',icon:'fingerprint',tone:'violet',mins:30,
+10:{mod:3,title:'La huella de los archivos',icon:'fingerprint',tone:'violet',mins:35,
  intro:'Cada archivo tiene una huella única llamada hash. Si cambia una sola letra, cambia la huella entera. Vamos a comprobarlo con una huella real.',
  missions:[
  {type:'hash',title:'Mirá la huella cambiar',lead:'Escribí en el cuadro y mirá cómo cambia la huella.',tasks:[
@@ -175,6 +176,13 @@ var PR_SEG={
   ['Cambiá una sola letra: escribí <b>Hola</b> (con mayúscula)','return t==="Hola"','Cambió una sola letra… ¡y la huella es totalmente distinta!'],
   ['Volvé a escribir <b>hola</b>: ¿te da la misma huella del principio?','return t==="hola"&&seen["Hola"]!==undefined','Misma entrada, misma huella. Siempre.'],
   ['Escribí una frase larga, de más de 30 letras','return t.length>30','La huella tiene siempre el mismo largo, sea el texto chico o enorme.']]},
+ {type:'term',title:'La huella de un archivo descargado',lead:'Así se hace en Windows: abrís el <b>Símbolo del sistema</b>, escribís <b>certutil -hashfile</b>, un espacio, <b>arrastrás el archivo</b> a la ventana (se escribe solo dónde está) y terminás con <b>SHA256</b>. Acá Marta ya bajó dos instaladores.',
+  banner:'Terminal de práctica. En Descargas hay dos archivos: instalador.exe e instalador (1).exe. El sitio oficial publica esta huella: 3f9a21c7…88b0',
+  tasks:[['Calculá la huella del primero: escribí <b>certutil -hashfile Descargas\\instalador.exe SHA256</b>'],['Ahora la del segundo: escribí <b>certutil -hashfile "Descargas\\instalador (1).exe" SHA256</b>']],
+  cmds:{'certutil +-hashfile +"?(c:\\\\users\\\\ana\\\\)?(descargas\\\\)?instalador\\.exe"? +sha256':[[['o','Hash SHA256 de Descargas\\instalador.exe:'],['g','3f9a21c7d40e8b5a6c19e2f07b3d4a51c8e92f6d0a7b14e3c5d28f9e6a0b88b0'],['o','CertUtil: -hashfile comando completado correctamente.'],['y','→ Empieza con 3f9a21c7 y termina con 88b0, igual que la del sitio oficial: es el original ✔']],0],
+   'certutil +-hashfile +"?(c:\\\\users\\\\ana\\\\)?(descargas\\\\)?instalador \\(1\\)\\.exe"? +sha256':[[['o','Hash SHA256 de Descargas\\instalador (1).exe:'],['g','b71e05aa93c2d6f8e14b0a7c52d9e3f60b8a4c1d7e2f95a03c6b18d4e7f29c3d'],['o','CertUtil: -hashfile comando completado correctamente.'],['r','→ No coincide con la del sitio oficial (3f9a…88b0): este archivo fue modificado. No lo abras: borralo.']],1],
+   'certutil.*':[[['r','Revisá el comando: certutil -hashfile, un espacio, el archivo y al final SHA256 (separado por un espacio).']],null],
+   '.*':[[['r','Escribí el comando de la tarea. Tip: en tu compu de verdad, arrastrá el archivo a la ventana en vez de escribir la ubicación.']],null]}},
  {type:'quiz',title:'Detective de huellas',lead:'Marta descargó el instalador de un programa. El sitio oficial publica su huella. ¿Cuál descarga es la original?',items:[
   {ctx:'Huella publicada en el sitio oficial: <span style="font-family:monospace">3f9a 21c7 … 88b0</span>',q:'¿Qué archivo coincide?',opts:['Descarga A: <span style="font-family:monospace">3f9a 21c7 … 88b0</span>','Descarga B: <span style="font-family:monospace">3f9a 21c8 … 11d4</span>','Descarga C: <span style="font-family:monospace">a07e 5b2f … 88b0</span>'],a:0,why:'Tiene que coincidir entera. B y C se parecen en partes, pero no son iguales: fueron modificadas.'},
   {q:'La huella de tu archivo no coincide con la publicada. ¿Qué hacés?',opts:['Lo instalo igual','Lo borro y lo bajo del sitio oficial','Cambio el nombre del archivo'],a:1,why:'Si no coincide, el archivo cambió en el camino. Puede estar dañado o modificado.'},
