@@ -686,10 +686,11 @@ ol.log li.mitigate { border-color: var(--warn); }
       var p = proj(c.pos[0], lift(c.layer) + c.top + 0.42, c.pos[1]);
       return { c: c, x: p[0], y: p[1], z: p[2] };
     }).sort(function (a, b) { return b.z - a.z; });
-    ctx.font = '600 12px ' + P.body; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    var sm = W < 440, LFONT = '600 ' + (sm ? 10 : 12) + 'px ' + P.body, LH = sm ? 18 : 22;
+    ctx.font = LFONT; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
     labs.forEach(function (L) {
       L.warn = L.c.defs.some(function (d) { return !defOn[d]; });
-      L.tw = ctx.measureText(L.c.name).width; L.w = L.tw + 28 + (L.warn ? 16 : 0); L.h = 22;
+      L.tw = ctx.measureText(L.c.name).width; L.w = L.tw + (sm ? 24 : 28) + (L.warn ? 16 : 0); L.h = LH;
       L.bx = Math.max(4, Math.min(W - L.w - 4, L.x - L.w / 2)); L.by = L.y - L.h;
     });
     var placed = [];
@@ -697,9 +698,16 @@ ol.log li.mitigate { border-color: var(--warn); }
       for (var t = 0; t < 8; t++) {
         var clash = placed.some(function (q) { return L.bx < q.bx + q.w + 4 && L.bx + L.w + 4 > q.bx && L.by < q.by + q.h + 3 && L.by + L.h + 3 > q.by; });
         if (!clash) break;
-        L.by -= 13;
+        L.by -= (sm ? 10 : 13);
       }
-      L.by = Math.max(52, L.by);
+      if (L.by < 52) {
+        L.by = 52;
+        for (var u = 0; u < 12; u++) {
+          var clash2 = placed.some(function (q) { return L.bx < q.bx + q.w + 4 && L.bx + L.w + 4 > q.bx && L.by < q.by + q.h + 3 && L.by + L.h + 3 > q.by; });
+          if (!clash2) break;
+          L.by += L.h + 3;
+        }
+      }
       placed.push(L);
     });
     labs.forEach(function (L) {
@@ -723,7 +731,7 @@ ol.log li.mitigate { border-color: var(--warn); }
         ctx.fillStyle = P.warn; ctx.beginPath(); ctx.arc(wx, y + h / 2, 6.5, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = P.surface; ctx.font = '700 10px ' + P.body; ctx.textAlign = 'center';
         ctx.fillText('!', wx, y + h / 2 + 0.5);
-        ctx.font = '600 12px ' + P.body; ctx.textAlign = 'left';
+        ctx.font = LFONT; ctx.textAlign = 'left';
       }
       hits.push({ pts: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]], id: c.id });
     });
