@@ -56,6 +56,15 @@ function notaEnCFP(trayecto, practica, puntaje, detalle) {
       .then(function (r) { return r.ok ? r.json() : 'error'; });
   }).catch(function () { return 'error'; });
 }
+// Notas de MIS prácticas en la plataforma del CFP, todas en una consulta: {"3":{nota,evaluada,reintentos_usados},…}
+function notasPracticasCFP(trayecto) {
+  return tokenVigente().then(function (t) {
+    return fetch(CFP_URL + '/rest/v1/rpc/notas_practicas', { method: 'POST', headers: { apikey: CFP_CLAVE, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_trayecto: trayecto }) }).then(function (r) { return r.ok ? r.json() : null; });
+  }).catch(function () { return null; });
+}
+// Mis intentos guardados en la base de prácticas (para recuperar una nota hecha en otro equipo)
+function misIntentos() { return funcion('mis_intentos').then(function (j) { return j.intentos || []; }, function () { return null; }); }
 function leerIntentos() { return funcion('listar').then(function (j) { return j.intentos || []; }); }
 
 /* ---------- Qué prácticas están habilitadas (igual que en la plataforma del CFP) ----------

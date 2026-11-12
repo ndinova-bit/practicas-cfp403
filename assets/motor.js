@@ -34,13 +34,36 @@ function homeTrayecto(t){header(t.nombre,'Prácticas del trayecto');sincronizarP
   var h='<section class="screen"><div class="intro-ic">'+ic(t.icono,t.tono)+'</div><h1 style="text-align:center">'+esc(t.nombre)+'</h1><p class="lead" style="text-align:center">Elegí la práctica que te indica la clase que estás haciendo.</p>';
   if(mods.length>1){h+='<h3>Tus insignias</h3><div class="badges">';
     mods.forEach(function(mo,i){var all=true,any=false;for(var k in t.practicas){if(t.practicas[k].mod===mo){any=true;if(!(done[k]>=70))all=false}}
-      h+='<div class="badge'+(any&&all?' on':'')+'">'+ic(t.iconosModulo&&t.iconosModulo[mo]||'medal',TONOS[i%TONOS.length])+'Módulo '+ROM[mo]+'</div>'});
-    h+='</div><p class="hint">Ganás la insignia de un módulo cuando sacás 70 o más en todas sus prácticas. Se guardan en este navegador.</p>'}
+      h+='<div class="badge'+(any&&all?' on':'')+'" data-mod="'+mo+'">'+ic(t.iconosModulo&&t.iconosModulo[mo]||'medal',TONOS[i%TONOS.length])+'Módulo '+ROM[mo]+'</div>'});
+    h+='</div><p class="hint">Ganás la insignia de un módulo cuando sacás 70 o más en todas sus prácticas. Se calculan con tus notas cargadas en la plataforma del CFP.</p>'}
   mods.forEach(function(mo,i){var col=TN[TONOS[i%TONOS.length]][2];h+='<h3>Módulo '+ROM[mo]+' · '+esc(t.modulos[mo])+'</h3><div class="plist">';
     Object.keys(t.practicas).map(Number).sort(function(a,b){return a-b}).forEach(function(id){var p=t.practicas[id];if(p.mod!==mo)return;
       h+='<button class="pitem" data-id="'+id+'" onclick="location.hash=\'#/'+t.id+'/'+id+'\'"><span class="num" style="background:'+col+'">'+id+'</span><span><b>'+esc(p.title)+'</b><br><span class="hint">Clase '+id+'</span></span>'+(done[id]!=null?'<span class="st">'+done[id]+'/100</span>':'')+'</button>'});h+='</div>'});
   h+=pieSesion()+'<div class="teacher-link">CFP N.º 403 «Oscar Smith» · Luján</div></section>';app.innerHTML=h;window.scrollTo(0,0);
-  disponibilidad(t.id).then(function(d){if(!d)return;app.querySelectorAll('.pitem[data-id]').forEach(function(b){var x=d[b.dataset.id],tx=textoBloqueo(x);if(!tx)return;b.classList.add('lock');var s=b.querySelector('.hint');if(s)s.textContent='🔒 '+tx})})}
+  disponibilidad(t.id).then(function(d){if(!d)return;app.querySelectorAll('.pitem[data-id]').forEach(function(b){var x=d[b.dataset.id],tx=textoBloqueo(x);if(!tx)return;b.classList.add('lock');var s=b.querySelector('.hint');if(s)s.textContent='🔒 '+tx})});
+  mostrarNotasCFP(t)}
+// Pinta en la lista la nota que ya quedó en la plataforma del CFP, y las insignias según esas notas
+function mostrarNotasCFP(t){if(!SES||!SES.perfil||SES.perfil.admin)return;
+  notasPracticasCFP(t.id).then(function(n){if(!n||typeof n!=='object')return;
+    Object.keys(n).forEach(function(id){var x=n[id],b=app.querySelector('.pitem[data-id="'+id+'"]');if(!b||x.nota==null)return;
+      var num=parseFloat(String(x.nota).replace(',','.')),ok=x.evaluada||(!isNaN(num)&&num>=70);
+      var st=b.querySelector('.st');if(!st){st=document.createElement('span');st.className='st';b.appendChild(st)}
+      st.textContent=(ok?'✓ ':'')+x.nota;st.classList.toggle('ok',!!ok);st.classList.toggle('mal',!ok);
+      if(!ok){var s2=b.querySelector('.hint');if(s2&&!b.classList.contains('lock'))s2.textContent=(2-(x.reintentos_usados||0))>0?'Te queda'+((2-(x.reintentos_usados||0))>1?'n':'')+' '+(2-(x.reintentos_usados||0))+' reintento'+((2-(x.reintentos_usados||0))>1?'s':''):'Sin reintentos'}});
+    app.querySelectorAll('.badge[data-mod]').forEach(function(bd){var mo=+bd.dataset.mod,all=true,any=false;
+      for(var k in t.practicas){if(t.practicas[k].mod!==mo)continue;any=true;var x=n[k];var num=x&&x.nota!=null?parseFloat(String(x.nota).replace(',','.')):NaN;
+        if(!(x&&(x.evaluada&&!isNaN(num)&&num>=70||!isNaN(num)&&num>=70)))all=false}
+      if(any&&all)bd.classList.add('on')});
+    recuperarNotas(t,n)})}
+// Si hice una práctica desde otro equipo antes de que se publicara, recupero esa nota desde la base de prácticas
+function recuperarNotas(t,n){var falta=[];for(var k in t.practicas){if(!n[k]||n[k].nota==null)falta.push(+k)}
+  if(!falta.length)return;var ya=+(sessionStorage.getItem('rec-'+t.id)||0);if(Date.now()-ya<600000)return;sessionStorage.setItem('rec-'+t.id,Date.now());
+  misIntentos().then(function(li){if(!li||!li.length)return;
+    falta.forEach(function(pid){
+      var de=li.filter(function(r){return r.trayecto===t.id&&+r.practica===pid&&!(r.detalle&&r.detalle[0]==='[repaso sin nota]')})
+              .sort(function(a,b){return String(a.creado).localeCompare(String(b.creado))});
+      if(!de.length)return;
+      notaEnCFP(t.id,pid,+de[0].puntaje,null).then(function(st){if(st==='cargada'||st==='recuperatorio')mostrarNotasCFP(t)})})})}
 
 /* ---------------- PRÁCTICA ---------------- */
 function codigoDe(per){var ap=per.apellido||String(per.nombre||'').split(',')[0].trim().split(/\s+/).pop();return (String(ap||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-ZÑ]/g,'')||'ESTUDIANTE')+(per.dni4||'0000')}

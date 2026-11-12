@@ -82,6 +82,13 @@ Deno.serve(async (req) => {
       return resp(200, { ok: true });
     }
 
+    if (body.accion === 'mis_intentos') {
+      // Los intentos del propio estudiante (para recuperar una nota hecha desde otro equipo)
+      const r = await propia('intentos?select=trayecto,practica,puntaje,detalle,creado&dni=eq.' + encodeURIComponent(String(perfil.dni || '')) + '&order=creado.asc&limit=500');
+      if (!r.ok) return resp(500, { error: 'No se pudieron leer tus intentos' });
+      return resp(200, { intentos: await r.json() });
+    }
+
     if (body.accion === 'listar') {
       if (!esAdmin) return resp(403, { error: 'Este panel es solo para la dirección.' });
       const r = await propia('intentos?select=*&order=creado.desc&limit=20000');
