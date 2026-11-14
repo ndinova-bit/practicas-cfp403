@@ -5,6 +5,7 @@
 // Las claves de acá son públicas (están pensadas para ir en el navegador).
 var CFP_URL = 'https://dxgqtdaexlegsaohdywx.supabase.co';
 var CFP_CLAVE = 'sb_publishable_q3iliYP60gR5bP6vtTwoHA_8FWqg7iz';
+var CORRECTOR_FUNCION = CFP_URL + '/functions/v1/practica-servidor'; // corrige las prácticas en el servidor (plataforma del CFP)
 var PRACTICAS_FUNCION = 'https://kejiwtpjixczomylnkzj.supabase.co/functions/v1/practicas';
 
 var SES = null; // {token, refresh, exp, perfil:{nombre, apellido, dni4, admin, trayectos[]}}
@@ -30,6 +31,16 @@ function funcion(accion, datos) {
     return fetch(PRACTICAS_FUNCION, { method: 'POST', headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: accion, datos: datos }) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('Error ' + r.status)); e.status = r.status; throw e; } return j; }); });
   });
+}
+// Corrección en el servidor: el navegador manda lo que eligió el estudiante y recibe si estuvo bien (las respuestas correctas no están acá)
+function corrector(accion, datos) {
+  function una() {
+    return tokenVigente().then(function (t) {
+      return fetch(CORRECTOR_FUNCION, { method: 'POST', headers: { apikey: CFP_CLAVE, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ accion: accion }, datos || {})) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('Error ' + r.status)); e.status = r.status; e.reintentar = !!j.reintentar; throw e; } return j; }); });
+    });
+  }
+  return una().catch(function (e) { if (e.reintentar) return una(); throw e; });
 }
 // Ingresar con DNI o correo + contraseña de la plataforma del CFP
 function ingresar(usuario, clave) {

@@ -102,7 +102,9 @@ function startPractice(tid,id){
       h+='<p class="hint">'+info+' '+msg+'</p>';btns='<button class="btn" data-m="nota">Empezar</button>'}
     $('#est').innerHTML=h+btns;
     $('#est').querySelectorAll('button').forEach(function(b){b.onclick=function(){var m=b.dataset.m;if(m==='revision')return verRevision(tid,id);
-      S={t:t,id:id,p:p,per:codigoDe(per),modo:m,mi:-1,pts:[],max:[],log:[],rev:[]};steps();next()}});
+      S={t:t,id:id,p:p,per:codigoDe(per),modo:m,mi:-1,pts:[],max:[],log:[],rev:[],comp:[]};
+      if(!t.servidor){steps();next();return}
+      b.disabled=true;var S0=S;corrector('iniciar',{trayecto:tid,practica:id,modo:m}).then(function(r){S0.sesion=r.sesion;if(S!==S0)return;steps();next()},function(e){b.disabled=false;alert(e.message||'No pudimos empezar la práctica. Probá de nuevo.')})}});
   });
 }
 function verRevision(tid,id){var p=TRAYECTOS[tid].practicas[id],rev=store('rev-'+tid+'-'+id)||[];
@@ -113,19 +115,23 @@ function steps(){var h='';for(var i=0;i<S.p.missions.length;i++)h+='<i class="'+
 function next(){simLimpiar();S.mi++;steps();window.scrollTo(0,0);if(S.mi>=S.p.missions.length)return finish();var m=S.p.missions[S.mi];
   var wrap='<section class="screen"><span class="tag">Misión '+(S.mi+1)+' de '+S.p.missions.length+'</span><h2>'+esc(m.title)+'</h2><p class="lead">'+m.lead+'</p><div id="mz"></div><button class="btn" id="nx" style="display:none">'+(S.mi+1<S.p.missions.length?'Siguiente misión':'Ver mi resultado')+'</button></section>';
   app.innerHTML=wrap;$('#nx').onclick=next;TYPES[m.type](m,$('#mz'));}
-function done(pts,max,log){S.pts[S.mi]=pts;S.max[S.mi]=max;S.log[S.mi]=log;$('#nx').style.display='block';}
+function done(pts,max,log){S.pts[S.mi]=pts;S.max[S.mi]=max;S.log[S.mi]=log;if(S.comp)S.comp[S.mi]={p:pts,x:max};$('#nx').style.display='block';}
+/* Si el trayecto se corrige en el servidor, cada respuesta se verifica allá; si no, se verifica acá (local() devuelve el resultado). */
+function chk(datos,local){if(!S.t.servidor)return Promise.resolve(local());return corrector('verificar',Object.assign({sesion:S.sesion,m:S.mi},datos))}
 
 var TYPES={};
 /* --- QUIZ --- */
-TYPES.quiz=function(m,z){var i=0,first,score=0,log=[];
+TYPES.quiz=function(m,z){var i=0,first,score=0,log=[],busy=0;
   function show(){var it=m.items[i];first=true;
     var opts=it.opts.map(function(o,k){return '<button data-k="'+k+'">'+o+'</button>'}).join('');
     z.innerHTML='<div class="card"><div class="counter">'+(i+1)+' de '+m.items.length+'</div><div class="bar"><b style="width:'+(i/m.items.length*100)+'%"></b></div>'+
     (it.ctx?'<div class="hint" style="margin-bottom:6px">'+it.ctx+'</div>':'')+(it.mock?it.mock:'')+'<div class="q">'+it.q+'</div><div class="opts'+(m.row?' row':'')+'">'+opts+'</div><div class="fb" id="f"></div><button class="btn" id="qn" style="display:none">Seguir</button></div>';
-    z.querySelectorAll('.opts button').forEach(function(b){b.onclick=function(){var k=+b.dataset.k,f=$('#f');
-      if(k===it.a){b.className='right';if(first)score++;log.push((i+1)+(first?'✓':'✗'));f.className='fb ok';f.innerHTML='<b>¡Bien!</b> '+it.why;
+    z.querySelectorAll('.opts button').forEach(function(b){b.onclick=function(){var k=+b.dataset.k,f=$('#f');if(busy)return;busy=1;
+      chk({i:i,k:k},function(){return {ok:k===it.a,why:it.why}}).then(function(r){busy=0;
+      if(r.ok){b.className='right';if(first)score++;log.push((i+1)+(first?'✓':'✗'));f.className='fb ok';f.innerHTML='<b>¡Bien!</b> '+(r.why!=null?r.why:it.why);
         z.querySelectorAll('.opts button').forEach(function(x){x.disabled=true});$('#qn').style.display='block';}
-      else{if(first)S.rev.push({m:m.title,t:(it.q||'').replace(/<[^>]+>/g,''),ok:it.opts[it.a].replace(/<br>/g,' ').replace(/<[^>]+>/g,''),why:it.why});b.className='wrong';b.disabled=true;first=false;f.className='fb no';f.innerHTML=(it.hint||'No es esa. Leé de nuevo y probá otra.');}}});
+      else{if(first&&!S.t.servidor)S.rev.push({m:m.title,t:(it.q||'').replace(/<[^>]+>/g,''),ok:it.opts[it.a].replace(/<br>/g,' ').replace(/<[^>]+>/g,''),why:it.why});b.className='wrong';b.disabled=true;first=false;f.className='fb no';f.innerHTML=(it.hint||'No es esa. Leé de nuevo y probá otra.');}
+      },function(e){busy=0;f.className='fb no';f.textContent=e.message||'No pudimos verificar tu respuesta. Probá de nuevo.'})}});
     $('#qn').onclick=function(){i++;if(i<m.items.length)show();else{z.innerHTML='<div class="fb ok">Terminaste: '+score+' de '+m.items.length+' al primer intento.</div>';done(score,m.items.length,'aciertos '+score+'/'+m.items.length+' ('+log.join(' ')+')')}};}
   show();};
 /* --- SIM (simulación interactiva en un iframe del mismo sitio; avisa el avance con postMessage) --- */
@@ -168,37 +174,49 @@ TYPES.sort=function(m,z){var sel=null,left=m.items.length,score=0,tried={};
   z.innerHTML='<div class="card"><div class="hint">Tocá una tarjeta y después la caja donde va.</div><div id="chips" style="margin-top:8px"></div><div class="bins" style="grid-template-columns:repeat('+Math.min(m.bins.length,3)+',1fr)">'+
   m.bins.map(function(b,k){return '<div class="bin" data-b="'+k+'"><h4>'+b+'</h4><div></div></div>'}).join('')+'</div><div class="fb" id="f"></div></div>';
   shuffle(m.items.map(function(x,k){return k})).forEach(function(k){var c=el('<span class="chip">'+m.items[k][0]+'</span>');c.dataset.k=k;c.onclick=function(){z.querySelectorAll('.chip').forEach(function(x){x.classList.remove('sel')});c.classList.add('sel');sel=c};$('#chips').appendChild(c)});
-  z.querySelectorAll('.bin').forEach(function(bn){bn.onclick=function(){if(!sel)return;var k=+sel.dataset.k,b=+bn.dataset.b,f=$('#f'),it=m.items[k];
-    if(it[1]===b){if(!tried[k])score++;bn.querySelector('div').appendChild(el('<div class="it">'+it[0]+'</div>'));sel.remove();sel=null;left--;f.className='fb ok';f.innerHTML='<b>¡Sí!</b> '+(it[2]||'Va en «'+m.bins[b]+'».');
+  z.querySelectorAll('.bin').forEach(function(bn){bn.onclick=function(){if(!sel)return;var cur=sel,k=+cur.dataset.k,b=+bn.dataset.b,f=$('#f'),it=m.items[k];if(cur.dataset.busy)return;cur.dataset.busy=1;
+    chk({k:k,b:b},function(){return it[1]===b?{ok:true,r:it[2]||'Va en «'+m.bins[b]+'».'}:{ok:false}}).then(function(r){delete cur.dataset.busy;
+    if(r.ok){if(!tried[k])score++;bn.querySelector('div').appendChild(el('<div class="it">'+it[0]+'</div>'));cur.remove();if(sel===cur)sel=null;left--;f.className='fb ok';f.innerHTML='<b>¡Sí!</b> '+r.r;
       if(!left){f.innerHTML='<b>¡Todo ordenado!</b> '+(m.end||'');done(score,m.items.length,'al primer intento '+score+'/'+m.items.length)}}
-    else{if(!tried[k])S.rev.push({m:m.title,t:it[0],ok:m.bins[it[1]],why:it[2]||''});tried[k]=1;f.className='fb no';f.innerHTML=m.hint||'Esa no es su caja. Probá otra.'}}});};
+    else{if(!tried[k]&&!S.t.servidor)S.rev.push({m:m.title,t:it[0],ok:m.bins[it[1]],why:it[2]||''});tried[k]=1;f.className='fb no';f.innerHTML=m.hint||'Esa no es su caja. Probá otra.'}
+    },function(e){delete cur.dataset.busy;f.className='fb no';f.textContent=e.message||'No pudimos verificar tu respuesta. Probá de nuevo.'})}});};
 /* --- SPOT (texto clickeable en una pantalla simulada) --- */
 TYPES.spot=function(m,z){var need=m.need,found=0,miss=0,got={};
   z.innerHTML='<div class="mock'+(m.dark?' dark':'')+'"><div class="bar2"><i style="background:#E06A5B"></i><i style="background:#E3A03A"></i><i style="background:#3C9D6E"></i>&nbsp;'+esc(m.win||'')+'</div><div class="body">'+m.html+'</div></div>'+
   '<div class="card"><div class="counter" id="c">Encontrados: 0 de '+need+'</div><div class="fb" id="f"></div><ul class="found-list" id="fl"></ul><button class="btn alt" id="rv" style="display:none">No encuentro los que faltan: mostrámelos</button></div>';
-  z.querySelectorAll('.sp').forEach(function(s,ix){s.onclick=function(){var f=$('#f');
-    if(s.dataset.ok){if(got[ix])return;got[ix]=1;found++;s.classList.add('found');f.className='fb ok';f.textContent='¡Encontraste uno!';$('#fl').appendChild(el('<li>'+s.dataset.ok+'</li>'));
+  z.querySelectorAll('.sp').forEach(function(s,ix){s.onclick=function(){var f=$('#f');if(got[ix])return;
+    chk({ix:ix},function(){return s.dataset.ok?{ok:true,label:s.dataset.ok}:{ok:false,no:s.dataset.no}}).then(function(r){
+    if(r.ok){if(got[ix])return;got[ix]=1;found++;s.classList.add('found');f.className='fb ok';f.textContent='¡Encontraste uno!';$('#fl').appendChild(el('<li>'+r.label+'</li>'));
       $('#c').textContent='Encontrados: '+found+' de '+need;if(found>=need){f.innerHTML='<b>¡Los encontraste todos!</b> '+(m.end||'');$('#rv').style.display='none';done(need,need,'encontró '+need+'/'+need+(miss?' ('+miss+' toques de más)':''))}}
-    else{miss++;s.classList.add('miss');setTimeout(function(){s.classList.remove('miss')},900);f.className='fb no';f.innerHTML=s.dataset.no||'Eso está bien. Seguí buscando.';if(miss>=3&&found<need)$('#rv').style.display='block'}}});
-  $('#rv').onclick=function(){z.querySelectorAll('.sp').forEach(function(s,ix){if(s.dataset.ok&&!got[ix]){S.rev.push({m:m.title,t:s.dataset.ok});got[ix]=1;s.classList.add('found');$('#fl').appendChild(el('<li>'+s.dataset.ok+'</li>'))}});
-    $('#rv').style.display='none';$('#c').textContent='Encontrados por vos: '+found+' de '+need;done(found,need,'encontró '+found+'/'+need+' (pidió ayuda)')};};
+    else{miss++;s.classList.add('miss');setTimeout(function(){s.classList.remove('miss')},900);f.className='fb no';f.innerHTML=r.no||'Eso está bien. Seguí buscando.';if(miss>=3&&found<need)$('#rv').style.display='block'}
+    },function(e){f.className='fb no';f.textContent=e.message||'No pudimos verificar tu respuesta. Probá de nuevo.'})}});
+  $('#rv').onclick=function(){var sp=z.querySelectorAll('.sp');
+    (S.t.servidor?corrector('revelar',{sesion:S.sesion,m:S.mi}).then(function(r){return r.faltan}):Promise.resolve([].map.call(sp,function(s,ix){return s.dataset.ok&&!got[ix]?{ix:ix,l:s.dataset.ok}:null}).filter(Boolean))).then(function(fal){
+      fal.forEach(function(x){if(got[x.ix])return;if(!S.t.servidor)S.rev.push({m:m.title,t:x.l});got[x.ix]=1;sp[x.ix].classList.add('found');$('#fl').appendChild(el('<li>'+x.l+'</li>'))});
+      $('#rv').style.display='none';$('#c').textContent='Encontrados por vos: '+found+' de '+need;done(found,need,'encontró '+found+'/'+need+' (pidió ayuda)')},function(e){var f=$('#f');f.className='fb no';f.textContent=e.message||'No pudimos conectar. Probá de nuevo.'})};};
 /* --- TILES (buscar los riesgosos entre tarjetas con ícono) --- */
-TYPES.tiles=function(m,z){var need=m.items.filter(function(x){return x[2]}).length,found=0,miss=0,got={};
+TYPES.tiles=function(m,z){var need=m.need!=null?m.need:m.items.filter(function(x){return x[2]}).length,found=0,miss=0,got={};
   z.innerHTML='<div class="tiles">'+shuffle(m.items.map(function(x,k){return k})).map(function(k){var it=m.items[k];return '<button class="tile" data-k="'+k+'">'+ic(it[0],'navy')+'<span>'+it[1]+'</span></button>'}).join('')+'</div>'+
   '<div class="card"><div class="counter" id="c">Encontrados: 0 de '+need+'</div><div class="fb" id="f"></div><ul class="found-list" id="fl"></ul><button class="btn alt" id="rv" style="display:none">No encuentro los que faltan: mostrámelos</button></div>';
-  z.querySelectorAll('.tile').forEach(function(t){t.onclick=function(){var k=+t.dataset.k,it=m.items[k],f=$('#f');
-    if(it[2]){if(got[k])return;got[k]=1;found++;t.classList.add('found');f.className='fb ok';f.textContent='¡Encontraste uno!';$('#fl').appendChild(el('<li><b>'+it[1]+'.</b> '+it[3]+'</li>'));$('#c').textContent='Encontrados: '+found+' de '+need;
+  z.querySelectorAll('.tile').forEach(function(t){t.onclick=function(){var k=+t.dataset.k,it=m.items[k],f=$('#f');if(got[k])return;
+    chk({k:k},function(){return {ok:!!it[2],x:it[3]}}).then(function(r){
+    if(r.ok){if(got[k])return;got[k]=1;found++;t.classList.add('found');f.className='fb ok';f.textContent='¡Encontraste uno!';$('#fl').appendChild(el('<li><b>'+it[1]+'.</b> '+r.x+'</li>'));$('#c').textContent='Encontrados: '+found+' de '+need;
       if(found>=need){f.innerHTML='<b>¡Los encontraste todos!</b> '+(m.end||'');$('#rv').style.display='none';done(need,need,'encontró '+need+'/'+need)}}
-    else{miss++;t.classList.add('miss');setTimeout(function(){t.classList.remove('miss')},900);f.className='fb no';f.innerHTML=it[3]||'Eso está bien.';if(miss>=3&&found<need)$('#rv').style.display='block'}}});
-  $('#rv').onclick=function(){m.items.forEach(function(it,k){if(it[2]&&!got[k]){S.rev.push({m:m.title,t:'<b>'+it[1]+'.</b> '+it[3]});got[k]=1;$('.tile[data-k="'+k+'"]').classList.add('found');$('#fl').appendChild(el('<li><b>'+it[1]+'.</b> '+it[3]+'</li>'))}});$('#rv').style.display='none';done(found,need,'encontró '+found+'/'+need+' (pidió ayuda)')};};
+    else{miss++;t.classList.add('miss');setTimeout(function(){t.classList.remove('miss')},900);f.className='fb no';f.innerHTML=r.x||'Eso está bien.';if(miss>=3&&found<need)$('#rv').style.display='block'}
+    },function(e){f.className='fb no';f.textContent=e.message||'No pudimos verificar tu respuesta. Probá de nuevo.'})}});
+  $('#rv').onclick=function(){(S.t.servidor?corrector('revelar',{sesion:S.sesion,m:S.mi}).then(function(r){return r.faltan}):Promise.resolve(m.items.map(function(it,k){return it[2]&&!got[k]?{k:k,x:it[3]}:null}).filter(Boolean))).then(function(fal){
+      fal.forEach(function(x){if(got[x.k])return;var it=m.items[x.k];if(!S.t.servidor)S.rev.push({m:m.title,t:'<b>'+it[1]+'.</b> '+x.x});got[x.k]=1;$('.tile[data-k="'+x.k+'"]').classList.add('found');$('#fl').appendChild(el('<li><b>'+it[1]+'.</b> '+x.x+'</li>'))});
+      $('#rv').style.display='none';done(found,need,'encontró '+found+'/'+need+' (pidió ayuda)')},function(e){var f=$('#f');f.className='fb no';f.textContent=e.message||'No pudimos conectar. Probá de nuevo.'})};};
 /* --- ORDER --- */
 TYPES.order=function(m,z){var picked=[],tries=0;
   function draw(){var ord=shuffle(m.steps.map(function(x,k){return k}));picked=[];
     z.innerHTML='<div class="card"><div class="hint">Tocá los pasos en el orden correcto. Si te equivocás, se reinicia.</div><div class="ord">'+ord.map(function(k){return '<button data-k="'+k+'"><b></b><span>'+m.steps[k]+'</span></button>'}).join('')+'</div><div class="fb" id="f"></div></div>';
-    z.querySelectorAll('.ord button').forEach(function(b){b.onclick=function(){if(b.classList.contains('picked'))return;var k=+b.dataset.k,f=$('#f');
-      if(k===picked.length){picked.push(k);b.classList.add('picked');b.querySelector('b').textContent=picked.length;
-        if(picked.length===m.steps.length){f.className='fb ok';f.innerHTML='<b>¡Orden perfecto!</b> '+(m.why||'');done(tries===0?1:(tries===1?0.5:0),1,tries===0?'al primer intento':'con '+tries+' reintentos')}}
-      else{if(!tries)S.rev.push({m:m.title,t:'El orden correcto es:',ok:m.steps.map(function(x,i){return (i+1)+'. '+x}).join(' · '),why:m.why||''});tries++;f.className='fb no';f.innerHTML=(m.hint||'Ese no va ahí.')+' Volvé a empezar.';setTimeout(draw,1300)}}});}
+    z.querySelectorAll('.ord button').forEach(function(b){b.onclick=function(){if(b.classList.contains('picked')||b.dataset.busy)return;var k=+b.dataset.k,f=$('#f');b.dataset.busy=1;
+      chk({k:k},function(){return k===picked.length?{ok:true,why:m.why||''}:{ok:false}}).then(function(r){delete b.dataset.busy;
+      if(r.ok){picked.push(k);b.classList.add('picked');b.querySelector('b').textContent=picked.length;
+        if(picked.length===m.steps.length){f.className='fb ok';f.innerHTML='<b>¡Orden perfecto!</b> '+(r.why!=null?r.why:(m.why||''));done(tries===0?1:(tries===1?0.5:0),1,tries===0?'al primer intento':'con '+tries+' reintentos')}}
+      else{if(!tries&&!S.t.servidor)S.rev.push({m:m.title,t:'El orden correcto es:',ok:m.steps.map(function(x,i){return (i+1)+'. '+x}).join(' · '),why:m.why||''});tries++;f.className='fb no';f.innerHTML=(m.hint||'Ese no va ahí.')+' Volvé a empezar.';setTimeout(draw,1300)}
+      },function(e){delete b.dataset.busy;f.className='fb no';f.textContent=e.message||'No pudimos verificar tu respuesta. Probá de nuevo.'})}});}
   draw();};
 /* --- LIST (inventario / plan personal: completar, no tiene error) --- */
 TYPES.list=function(m,z){var items=[];
@@ -297,7 +315,13 @@ var NOTA_MSG={cargada:['ok','✓ Tu nota quedó cargada en la plataforma del CFP
  fuera_de_plazo:['no','Venció el plazo de esta práctica en la plataforma del CFP, así que la nota no se cargó. Consultá con tu docente.'],
  no_inscripto:['info','Tu resultado quedó registrado (sin inscripción en este trayecto no se carga nota en la plataforma del CFP).'],
  error:['no','No pudimos conectar con la plataforma del CFP. Tu resultado quedó guardado acá: volvé a entrar al trayecto más tarde y se va a cargar.']};
-function finish(){var p=S.p,tot=0,pts=0;S.max.forEach(function(x,i){tot+=x;pts+=S.pts[i]});var score=Math.round(pts/tot*100);var code=mkCode(S.t,S.id,S.per,score);
+function finish(){
+  if(S.t.servidor&&!S._r){ // el puntaje lo calcula el servidor con lo que respondió la persona
+    $('#steps').innerHTML=S.p.missions.map(function(){return '<i class="done"></i>'}).join('');
+    app.innerHTML='<section class="screen"><h1 style="text-align:center">Corrigiendo tu práctica…</h1><p class="lead" style="text-align:center">Un momento, estamos calculando tu resultado.</p></section>';
+    var S0=S;return corrector('terminar',{sesion:S.sesion,comp:S.comp,log:S.log}).then(function(r){S0._r=r;S0.rev=r.rev||[];if(S===S0)finish()},function(e){
+      if(S!==S0)return;app.innerHTML='<section class="screen"><div class="intro-ic">'+ic('warning','amber')+'</div><h1 style="text-align:center">No pudimos corregir</h1><p class="lead" style="text-align:center">'+esc(e.message||'Sin conexión.')+'</p><button class="btn" id="rt">Reintentar</button></section>';$('#rt').onclick=function(){finish()}})}
+  var p=S.p,tot=0,pts=0;S.max.forEach(function(x,i){tot+=x;pts+=S.pts[i]});var score=S._r?S._r.puntaje:Math.round(pts/tot*100);var code=mkCode(S.t,S.id,S.per,score);
   var tid=S.t.id,pid=S.id,conNota=S.modo==='nota';
   $('#steps').innerHTML=p.missions.map(function(){return '<i class="done"></i>'}).join('');
   var det=p.missions.map(function(m,i){return m.title+': '+S.log[i]});
@@ -308,13 +332,14 @@ function finish(){var p=S.p,tot=0,pts=0;S.max.forEach(function(x,i){tot+=x;pts+=
   htmlRevision(S.rev)+recordatorioCFP(p)+
   '<button class="btn alt" onclick="startPractice(\''+tid+'\','+pid+')">Volver al inicio de la práctica</button><button class="btn alt" onclick="location.hash=\'#/'+tid+'\'">Volver a las prácticas del trayecto</button>'+pieSesion()+'</section>';
   var g0=guardarIntento({trayecto:tid,practica:pid,codigo_personal:S.per,puntaje:score,codigo:code,detalle:(conNota?[]:['[repaso sin nota]']).concat(S.log)});
-  if(conNota){var pend=store('pend-cfp')||{};pend[tid+'|'+pid]=score;store('pend-cfp',pend);
+  if(conNota&&S._r){var st0=S._r.nota||'error';g0.then(function(){var m=NOTA_MSG[st0]||NOTA_MSG.error,g=$('#gs');if(g){g.className='fb '+m[0];g.textContent=m[1]}})}
+  else if(conNota){var pend=store('pend-cfp')||{};pend[tid+'|'+pid]=score;store('pend-cfp',pend);
     g0.then(function(){return notaEnCFP(tid,pid,score,det)}).then(function(st){
       var m=NOTA_MSG[st]||NOTA_MSG.error,g=$('#gs');if(g){g.className='fb '+m[0];g.textContent=m[1]}
       if(st!=='error'&&st!=='sin_clase'){var pe=store('pend-cfp')||{};delete pe[tid+'|'+pid];store('pend-cfp',pe)}})}
   window.scrollTo(0,0);}
 // Reintenta pasar a la plataforma del CFP las notas que quedaron pendientes (sin conexión o práctica todavía no publicada)
-function sincronizarPendientes(){if(!SES||!SES.perfil)return;var pe=store('pend-cfp')||{};Object.keys(pe).forEach(function(k){var x=k.split('|');
+function sincronizarPendientes(){if(!SES||!SES.perfil)return;if(SES.perfil.trayectos&&!SES.perfil.admin)corrector('sincronizar',{}).catch(function(){});var pe=store('pend-cfp')||{};Object.keys(pe).forEach(function(k){var x=k.split('|');
   notaEnCFP(x[0],+x[1],pe[k],null).then(function(st){if(st!=='error'&&st!=='sin_clase'){var p2=store('pend-cfp')||{};delete p2[k];store('pend-cfp',p2)}})})}
 
 /* ---------------- DOCENTE (oculto: #/docente) ---------------- */

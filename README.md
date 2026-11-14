@@ -38,3 +38,17 @@ Computacional, `PL` Planillas), así los códigos de práctica no se confunden.
    y en qué trayectos tiene inscripción **ACTIVA**.
 3. Solo si está inscripto/a en ese trayecto, la función guarda el intento. Nadie más puede escribir ni leer la tabla.
 4. El panel docente (`#/docente`) solo lo ve el rol administrador de la plataforma del CFP.
+
+## Corrección en el servidor (Seguridad Informática)
+
+Las respuestas correctas de **Seguridad Informática** ya no están en este repositorio (que es público): viven en la tabla
+privada `practica_claves` de la plataforma del CFP. El navegador manda lo que eligió la persona a la función
+`practica-servidor` (plataforma del CFP) y recibe si estuvo bien; el puntaje lo calcula esa función y la nota se carga desde
+el servidor. `trayectos/seguridad.js` es el archivo **sin respuestas** (generado con `scripts/separar-claves.js`).
+
+Misiones que se corrigen en el servidor: `quiz`, `sort`, `spot`, `tiles`, `order`. Las demás (simuladores, terminal, router,
+listas y tareas autodeclaradas) las informa el navegador: no se pueden verificar desde afuera, pero tienen tope y peso fijo.
+
+Para agregar o cambiar una práctica con respuestas: armar la fuente (con respuestas) en una carpeta que **no** sea este repo,
+correr `node scripts/separar-claves.js <fuente> <publico> <claves.json>`, publicar el archivo público y cargar las claves en
+`practica_claves`.
